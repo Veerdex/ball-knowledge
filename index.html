@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E1412">
+<title>Ball Knowledge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+[hidden]{display:none!important}
+.wrap{padding-top:max(18px,env(safe-area-inset-top))!important}
+/* Layout: a single scout's report card on graph paper — sport tabs, day strip, clue ladder, guess box. */
+:root{
+  --bg:#E8ECE9; --paper:#FBFCFA; --ink:#13201A; --muted:#5B6A62; --line:#C8D1CB; --grid:rgba(31,95,209,.07);
+  --accent:#1F5FD1; --accent-ink:#FFFFFF; --hit:#1D8450; --miss:#C2432C; --lock:#DDE3DF;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1412; --paper:#161F1B; --ink:#E7EEE9; --muted:#93A399; --line:#2B3732; --grid:rgba(111,155,255,.07);
+  --accent:#6F9BFF; --accent-ink:#0B1220; --hit:#4CC285; --miss:#F07B64; --lock:#222C28; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1412; --paper:#161F1B; --ink:#E7EEE9; --muted:#93A399; --line:#2B3732; --grid:rgba(111,155,255,.07);
+  --accent:#6F9BFF; --accent-ink:#0B1220; --hit:#4CC285; --miss:#F07B64; --lock:#222C28; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:18px 40px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.brand{display:flex;flex-direction:column;gap:6px;min-width:0}
+.live{display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;column-gap:8px;align-items:end;justify-items:end}
+.live-num{grid-column:2;grid-row:1;font-family:var(--display);font-weight:900;font-size:3.6rem;line-height:.85;color:var(--accent);font-variant-numeric:tabular-nums}
+.live .eyebrow{grid-column:2;grid-row:2}
+.live-delta{grid-column:1;grid-row:1;font:500 .95rem var(--mono);color:var(--miss);align-self:start;opacity:0}
+.live-delta.show{animation:drop 1.6s ease-out}
+.live-num.hit{animation:thud .4s ease-out}
+@keyframes drop{0%{opacity:1;transform:none}70%{opacity:1}100%{opacity:0;transform:translateY(10px)}}
+@keyframes thud{0%{transform:scale(1)}40%{transform:scale(.92)}100%{transform:scale(1)}}
+.logo{font-family:var(--display);font-weight:900;font-size:2.1rem;letter-spacing:.04em;line-height:1;margin:0;text-transform:uppercase}
+.logo span{color:var(--accent)}
+.today{font-family:var(--mono);font-size:.75rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tab{font:600 .9rem var(--body);padding:10px 4px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;cursor:pointer;position:relative;min-width:0}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tab .dot{position:absolute;top:5px;right:6px;width:7px;height:7px;border-radius:50%}
+.tab .dot.win{background:var(--hit)} .tab .dot.loss{background:var(--miss)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.day{font:500 .78rem var(--mono);padding:7px 0;border:none;border-bottom:2px solid transparent;background:none;color:var(--muted);cursor:pointer;letter-spacing:.04em}
+.day[aria-current="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.day:disabled{opacity:.35;cursor:default}
+.day.win{color:var(--hit)} .day.loss{color:var(--miss)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:18px 18px;display:flex;flex-direction:column;gap:14px}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.level{display:flex;align-items:center;gap:8px}
+.pips{display:flex;gap:3px}
+.pip{width:14px;height:6px;border-radius:2px;background:var(--lock)}
+.pip.on{background:var(--accent)}
+ol.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.clue{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;min-width:0}
+.num{font-family:var(--display);font-weight:800;font-size:1.35rem;line-height:1.1;color:var(--accent);text-align:center}
+.clue.locked .num{color:var(--muted);opacity:.6}
+.text{min-width:0;padding-top:2px}
+.bar{height:14px;margin-top:5px;border-radius:3px;background:var(--lock)}
+.clue.fresh .text{animation:rise .35s ease-out}
+@keyframes rise{from{transform:translateY(4px);opacity:.4}to{transform:none;opacity:1}}
+.guesses{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.85rem;padding:3px 9px;border-radius:999px;border:1px solid var(--miss);color:var(--miss)}
+.chip.skip{border-color:var(--line);color:var(--muted)}
+.chip.hit{border-color:var(--hit);background:var(--hit);color:var(--paper)}
+.play{display:flex;flex-direction:column;gap:8px}
+.field{position:relative;display:flex;gap:8px}
+.field input{flex:1;min-width:0;font:500 1rem var(--body);padding:12px;border:1.5px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+.field input:focus{outline:none;border-color:var(--accent)}
+.btn{font:700 1rem var(--display);letter-spacing:.08em;text-transform:uppercase;padding:0 18px;border-radius:8px;border:1.5px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:focus-visible,.tab:focus-visible,.day:focus-visible,.opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+.linkbtn{background:none;border:none;color:var(--accent);font:600 .9rem var(--body);cursor:pointer;padding:4px 0}
+.menu{position:absolute;left:0;right:0;bottom:calc(100% + 6px);background:var(--paper);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);list-style:none;margin:0;padding:4px;max-height:260px;overflow-y:auto;z-index:5}
+.opt{padding:9px 10px;border-radius:6px;cursor:pointer}
+.opt[aria-selected="true"],.opt:hover{background:var(--lock)}
+.opt b{color:var(--accent);font-weight:600}
+.err{color:var(--miss);font-size:.85rem;min-height:1.2em}
+.result{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:14px}
+.result .verdict{font-family:var(--mono);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase}
+.result .verdict.win{color:var(--hit)} .result .verdict.loss{color:var(--miss)}
+.result h2{font-family:var(--display);font-weight:900;font-size:2.1rem;line-height:1;margin:0;text-transform:uppercase;text-wrap:balance}
+.score{display:flex;gap:4px}
+.sq{width:22px;height:22px;border-radius:4px;background:var(--lock)}
+.sq.m{background:var(--miss)} .sq.s{background:var(--muted);opacity:.5} .sq.h{background:var(--hit)}
+.share{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.share textarea{width:100%;font:500 .85rem var(--mono);border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--paper);color:var(--ink)}
+.recap{display:flex;flex-direction:column;gap:10px;margin-top:6px;padding:14px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+.recap .verdict{font-family:var(--mono);font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.recap .verdict.win{color:var(--hit)}
+.recap-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.recap-list li{display:grid;grid-template-columns:24px 120px 1fr auto;gap:8px;align-items:center;min-width:0}
+.recap-list .sq{width:20px;height:20px}
+.recap-name{font-size:.9rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rating{display:flex;align-items:center;gap:12px}
+.rating-num{font-family:var(--display);font-weight:900;font-size:3.4rem;line-height:.9;color:var(--accent);font-variant-numeric:tabular-nums}
+.recap-pen{font:500 .8rem var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.share-btn{padding-block:14px;font-size:1.15rem;width:100%}
+.share-btn:disabled{background:transparent;color:var(--muted);border-color:var(--line);cursor:default}
+.bar-nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--paper)}
+.seg button{font:600 .85rem var(--body);border:none;background:none;color:var(--muted);padding:6px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.who{font-size:.85rem;color:var(--muted);display:flex;gap:8px;align-items:center;min-width:0}
+.who b{color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auth{gap:12px}
+.auth h2,.board h2{font-family:var(--display);font-weight:900;font-size:1.8rem;margin:0;text-transform:uppercase;line-height:1}
+.auth p{margin:0;color:var(--muted);font-size:.92rem}
+.auth label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.auth input{font:500 1rem var(--body);padding:12px;border:1.5px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);text-transform:none;letter-spacing:0}
+.auth input:focus{outline:none;border-color:var(--accent)}
+.auth .btn{padding-block:13px;font-size:1.1rem}
+.board-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.board-table th{font:500 .7rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}
+.board-table th:nth-child(2){text-align:left}
+.board-table td{padding:10px 4px;border-bottom:1px solid var(--line);text-align:right}
+.board-table td:nth-child(1){font-family:var(--display);font-weight:800;font-size:1.2rem;color:var(--muted);width:2em;text-align:left}
+.board-table td:nth-child(2){text-align:left;font-weight:600;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board-table td:nth-child(4){font-family:var(--display);font-weight:800;font-size:1.15rem}
+.board-table tr.me td{color:var(--accent)}
+.flame{font-weight:500;color:var(--muted);font-size:.85rem;margin-left:4px}
+.note{font-size:.85rem;color:var(--muted)}
+.bonus{font:500 .8rem var(--mono);color:var(--hit);letter-spacing:.06em;text-transform:uppercase}
+.howto{font-size:.85rem;color:var(--muted);text-align:center;text-wrap:balance}
+@media (prefers-reduced-motion:reduce){.clue.fresh .text,.live-num.hit{animation:none}.live-delta.show{animation:none;opacity:1}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><h1 class="logo">Ball <span>Knowledge</span></h1><div class="today" id="todayLabel"></div></div>
+    <div class="live" role="status" aria-live="polite"><span class="live-delta" id="liveDelta"></span><span class="live-num" id="liveRating">1000</span><span class="eyebrow">Rating</span></div>
+  </header>
+  <div class="bar-nav" id="nav" hidden>
+    <div class="seg" role="group" aria-label="View"><button id="navPlay" aria-pressed="true">Play</button><button id="navBoard" aria-pressed="false">Leaderboard</button></div>
+    <div class="who"><b id="whoName"></b><button class="linkbtn" id="signOut">Sign out</button></div>
+  </div>
+  <section class="card auth" id="authView" hidden>
+    <h2>Sign in to play</h2>
+    <p>Pick a username and password. Your streak, points and rating go on the leaderboard.</p>
+    <form id="authForm" class="auth" style="display:flex;flex-direction:column;gap:12px">
+      <label for="authUser">Username<input id="authUser" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="16" placeholder="3–16 letters, numbers or _"></label>
+      <label for="authPass">Password<input id="authPass" type="password" autocomplete="current-password" minlength="6" placeholder="At least 6 characters"></label>
+      <div class="err" id="authErr" role="alert"></div>
+      <button class="btn" id="signInBtn" type="submit">Sign in</button>
+      <button class="btn ghost" id="signUpBtn" type="button">Create account</button>
+    </form>
+  </section>
+  <section class="card board" id="boardView" hidden>
+    <h2>Leaderboard</h2>
+    <p class="note">Ranked by total points. Rating is your average day out of 10. 🔥 means a streak of 3+ perfect days, worth +100 a day.</p>
+    <div style="overflow-x:auto"><table class="board-table"><thead><tr><th>#</th><th>Player</th><th>Rating</th><th>Points</th></tr></thead><tbody id="boardBody"><tr><td></td><td>Loading…</td><td></td><td></td></tr></tbody></table></div>
+  </section>
+  <div id="gameView" hidden>
+  <div class="tabs" role="tablist" id="tabs" aria-label="Today's players"></div>
+  <div class="days" id="days" aria-label="Day of the week" style="margin-top:14px"></div>
+  <section class="card" id="card" aria-live="polite" style="margin-top:14px"></section>
+  </div>
+  <p class="howto">Four players a day, Level 1 to 4. Five clues and five guesses each; every miss or skip reveals the next clue and costs rating: 80 on Player 1, down to 20 on Player 4. Start each day at 1000. New players every Monday.</p>
+</div>
+
+<script>
+const GAMES_PER_DAY=4;
+
+/* ---- Weekly puzzles: days[Mon..Sun] = 4 puzzles, easiest first. Puzzle = [answer, level, clue1..clue5] ---- */
+const WEEKS=[{start:"2026-10-05",days:[
+ [ // Mon
+  ["Shaquille O'Neal",1,"No. 1 overall pick in 1992 out of LSU.","Played for six different franchises.","Four titles, three straight Finals MVPs, and the 2000 MVP.","Dominant center nicknamed \"The Diesel.\"","Wore #32 in Orlando and #34 for the Lakers."],
+  ["Steve Nash",2,"Drafted 15th overall in 1996 out of Santa Clara.","Born in South Africa and raised in Canada.","Back-to-back MVPs in 2005 and 2006.","Point guard who joined the 50-40-90 club four times.","Wore #13 for the Phoenix Suns."],
+  ["Tony Parker",3,"Drafted 28th overall in 2001 at age 19.","Born in Belgium and raised in France.","Four titles and the 2007 Finals MVP.","Point guard known for his teardrop floater.","Wore #9 for the San Antonio Spurs."],
+  ["Shane Battier",4,"Drafted 6th overall in 2001 after winning a national title at Duke.","Played for Memphis, Houston, and Miami.","Won back-to-back titles in 2012 and 2013.","Called the \"No-Stats All-Star\" for defense that showed up in analytics but not box scores.","Wore #31 throughout his career."]],
+ [ // Tue
+  ["LeBron James",1,"Went straight from high school to No. 1 overall pick.","Won titles with three different franchises.","Four MVPs and four Finals MVPs.","Became the NBA's all-time leading scorer in 2023.","From Akron, Ohio; \"King James.\""],
+  ["Allen Iverson",2,"No. 1 overall pick in 1996 out of Georgetown.","Played 14 seasons for four franchises.","2001 MVP, four scoring titles, and 11 All-Star selections.","Six-foot guard famous for his crossover; \"The Answer.\"","Wore #3 for the Philadelphia 76ers."],
+  ["Vince Carter",3,"Drafted 5th overall in 1998, then traded on draft night.","Played 22 seasons, the most in NBA history.","1999 Rookie of the Year and eight-time All-Star.","Won the 2000 Slam Dunk Contest; \"Vinsanity.\"","Wore #15 for the Toronto Raptors."],
+  ["Matt Bonner",5,"Second-round pick in 2003 who spent his first pro season in Italy.","Played college ball at Florida.","Won two championships seven years apart.","Stretch big man nicknamed \"The Red Mamba.\"","Wore #15 for the San Antonio Spurs."]],
+ [ // Wed
+  ["Kevin Garnett",2,"Drafted 5th overall in 1995 straight out of a Chicago high school.","Played 21 seasons, starting and finishing with the same franchise.","2004 MVP and 2008 Defensive Player of the Year.","Won his only title in 2008 as part of a \"Big Three.\"","Wore #21 in Minnesota and #5 in Boston."],
+  ["Giannis Antetokounmpo",2,"Drafted 15th overall in 2013 out of Greece's second division.","Born in Athens to Nigerian parents; several brothers also reached the NBA.","Back-to-back MVPs, 2020 Defensive Player of the Year, and 2021 Finals MVP.","Long-limbed forward nicknamed \"The Greek Freak.\"","Wore #34 when he won the 2021 title with Milwaukee."],
+  ["Pau Gasol",3,"Drafted 3rd overall in 2001 and traded to Memphis that night.","His younger brother also became an NBA All-Star.","Two titles, six All-Star selections, and 2002 Rookie of the Year.","Spanish big man with two Olympic silver medals.","Wore #16 for the Los Angeles Lakers."],
+  ["Robert Horry",4,"Drafted 11th overall in 1992 out of Alabama.","Played 16 seasons for four franchises.","Won seven championships.","Forward nicknamed \"Big Shot Bob\" for his playoff daggers.","Wore #5 for the Lakers and Spurs."]],
+ [ // Thu
+  ["Michael Jordan",1,"Drafted 3rd overall in 1984 out of North Carolina.","Left the NBA in 1994 to play minor league baseball.","Six titles, six Finals MVPs, and five MVPs.","Shooting guard known as \"Air.\"","Wore #23 for the Chicago Bulls."],
+  ["Dwyane Wade",2,"Drafted 5th overall in 2003 out of Marquette.","Chicago native who played for three franchises.","Three titles, the 2006 Finals MVP, and 13 All-Star selections.","Shooting guard nicknamed \"Flash.\"","Wore #3 for the Miami Heat."],
+  ["Manu Ginóbili",3,"Taken 57th overall in 1999, near the very end of the draft.","Won a EuroLeague title in Italy before joining the NBA.","Four titles and the 2008 Sixth Man of the Year.","Argentine guard who led his country to Olympic gold in 2004.","Wore #20 for the San Antonio Spurs."],
+  ["Udonis Haslem",5,"Went undrafted in 2002 and played a season in France.","Spent all 20 NBA seasons with his hometown team.","Won three championships.","Power forward and longtime team captain.","Wore #40 for the Miami Heat."]],
+ [ // Fri
+  ["Tim Duncan",1,"No. 1 overall pick in 1997 out of Wake Forest.","Grew up in the U.S. Virgin Islands as a competitive swimmer.","Five titles, two MVPs, and three Finals MVPs.","Power forward nicknamed \"The Big Fundamental.\"","Wore #21 for the San Antonio Spurs."],
+  ["Kawhi Leonard",2,"Drafted 15th overall in 2011 and traded on draft night.","Played college ball at San Diego State.","Two titles, two Finals MVPs, and two Defensive Player of the Year awards.","Hit a four-bounce buzzer-beater to win a 2019 playoff series.","Wore #2 in San Antonio and Toronto."],
+  ["Chris Bosh",3,"Drafted 4th overall in 2003 after one year at Georgia Tech.","Played 13 seasons for two franchises.","11-time All-Star; Hall of Fame class of 2021.","Won back-to-back titles in Miami's Big Three.","Wore #4 in Toronto and #1 in Miami."],
+  ["Boris Diaw",4,"Drafted 21st overall in 2003 out of France.","His mother played professional basketball in France.","2006 Most Improved Player and a 2014 champion.","Playmaking big man famous for his love of espresso.","Wore #33 for the San Antonio Spurs."]],
+ [ // Sat
+  ["Kobe Bryant",1,"Drafted 13th overall in 1996 out of high school and traded on draft night.","Son of a former NBA player; spent part of his childhood in Italy.","Five titles, the 2008 MVP, and two Finals MVPs.","Scored 81 points in a 2006 game; \"Black Mamba.\"","Wore #8 and #24 for the Los Angeles Lakers."],
+  ["Stephen Curry",2,"Drafted 7th overall in 2009 out of Davidson.","Son of a longtime NBA sharpshooter.","Back-to-back MVPs, including the first unanimous one.","NBA's all-time leader in made three-pointers.","Wears #30 for Golden State."],
+  ["Paul Pierce",2,"Drafted 10th overall in 1998 out of Kansas.","Grew up in Inglewood, California, as a Lakers fan.","2008 Finals MVP and 10-time All-Star.","Small forward nicknamed \"The Truth.\"","Wore #34 for the Boston Celtics."],
+  ["Jimmy Butler",3,"Drafted 30th overall in 2011 out of Marquette.","Played junior college ball at Tyler JC in Texas.","Six-time All-Star who led an 8th seed to the 2023 Finals.","Two-way wing who sold coffee in the 2020 bubble.","Wore #22 for the Miami Heat."]],
+ [ // Sun
+  ["Kevin Durant",1,"Drafted 2nd overall in 2007 out of Texas.","Grew up in Prince George's County, Maryland.","2014 MVP and two Finals MVPs.","Scoring forward with four Olympic gold medals; \"Slim Reaper.\"","Wore #35 for Oklahoma City and Golden State."],
+  ["Nikola Jokić",2,"Taken 41st overall in 2014 while the broadcast showed a commercial.","Born in Sombor, Serbia.","Three MVPs and the 2023 Finals MVP.","Center known for elite passing; \"The Joker.\"","Wore #15 for the Denver Nuggets."],
+  ["Dwight Howard",2,"No. 1 overall pick in 2004 straight out of an Atlanta high school.","Played for seven NBA franchises.","Three straight Defensive Player of the Year awards.","Center who won the 2008 Slam Dunk Contest in a Superman cape.","Wore #12 for the Orlando Magic."],
+  ["Ray Allen",3,"Drafted 5th overall in 1996 out of UConn and traded on draft night.","Starred in the 1998 Spike Lee film \"He Got Game.\"","Two titles and 10 All-Star selections.","Shooting guard whose corner three saved Game 6 of the 2013 Finals.","Wore #34 in Milwaukee and #20 in Boston."]]
+]}];
+
+/* ---- Guess pool (answers are added automatically) ---- */
+const POOL="Hakeem Olajuwon,David Robinson,Karl Malone,John Stockton,Scottie Pippen,Dennis Rodman,Charles Barkley,Patrick Ewing,Reggie Miller,Gary Payton,Clyde Drexler,Alonzo Mourning,Dikembe Mutombo,Chris Webber,Grant Hill,Penny Hardaway,Jason Kidd,Chris Paul,Carmelo Anthony,Russell Westbrook,James Harden,Anthony Davis,Damian Lillard,Kyrie Irving,Klay Thompson,Draymond Green,Tracy McGrady,Yao Ming,Derrick Rose,Joel Embiid,Jayson Tatum,Kevin Love,Derek Fisher,Rajon Rondo,Andre Iguodala,Kyle Korver,Patty Mills,Danny Green,Mario Chalmers,Shai Gilgeous-Alexander,Victor Wembanyama,Devin Booker,Paul George,Luka Dončić,Dirk Nowitzki,Anthony Edwards,Jaylen Brown,Kyle Lowry,DeMar DeRozan,Blake Griffin,Rasheed Wallace,Ben Wallace,Chauncey Billups,Richard Hamilton,Tayshaun Prince,Lamar Odom,Metta World Peace,Shawn Marion,Amar'e Stoudemire,Jermaine O'Neal,Zach Randolph,Marc Gasol,Mike Conley,Tony Allen,Rudy Gobert,Bam Adebayo,Kemba Walker,Isaiah Thomas,Gordon Hayward,LaMarcus Aldridge,Brandon Roy,Gilbert Arenas,Baron Davis,Peja Stojaković,Vlade Divac,Mike Bibby,Steve Kerr,Toni Kukoč,Horace Grant,Sam Cassell,Alonzo Mourning,Tim Hardaway,Mitch Richmond,Shawn Kemp,Glen Rice,Dwight Howard,Jason Terry,J.J. Redick,Jrue Holiday,Khris Middleton,Brook Lopez,Al Horford,Joakim Noah,Luol Deng,Andre Drummond,Kevin McHale";
+
+/* ---- helpers ---- */
+const norm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ").trim();
+const DAY=86400000;
+const pad=n=>String(n).padStart(2,"0");
+const keyOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=k=>{const[y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)};
+const today=parse(keyOf(new Date()));
+const FIRST=parse(WEEKS[0].start);
+let week=WEEKS[0];
+for(const w of WEEKS){ if(parse(w.start)<=today) week=w; }
+const wStart=parse(week.start);
+const todayIdx=Math.max(0,Math.min(6,Math.round((today-wStart)/DAY)));
+const DOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+const NAMES=(()=>{const m=new Map();
+  POOL.split(",").forEach(n=>m.set(norm(n),n.trim()));
+  WEEKS.forEach(w=>w.days.forEach(d=>d.forEach(p=>m.set(norm(p[0]),p[0]))));
+  return [...m.values()].sort((a,b)=>a.localeCompare(b));})();
+
+const store={
+  get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const mem={};
+let ME=null; /* {id, username} */
+const stateKey=(day,g)=>`bk:${ME?ME.id:"anon"}:${week.start}:${day}:${g}`;
+function getState(day,g){const k=stateKey(day,g);if(!mem[k])mem[k]=store.get(k)||{guesses:[],done:null};return mem[k]}
+function saveState(day,g){const k=stateKey(day,g);store.set(k,mem[k])}
+
+let dayIdx=todayIdx;
+let game=0;
+let lastRevealed=0;
+document.getElementById("todayLabel").textContent=today.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+
+function firstOpenGame(day){for(let g=0;g<GAMES_PER_DAY;g++){if(!getState(day,g).done)return g}return 0}
+
+/* ---- render ---- */
+function renderTabs(){
+  const el=document.getElementById("tabs"); el.innerHTML="";
+  for(let g=0;g<GAMES_PER_DAY;g++){
+    const st=getState(dayIdx,g);
+    const b=document.createElement("button");
+    b.className="tab";b.setAttribute("role","tab");b.id="tab-"+g;b.textContent="Player "+(g+1);
+    b.setAttribute("aria-selected",g===game);
+    if(st.done){const d=document.createElement("span");d.className="dot "+st.done;b.appendChild(d)}
+    b.onclick=()=>{game=g;lastRevealed=0;render()};
+    el.appendChild(b);
+  }
+}
+function renderDays(){
+  const el=document.getElementById("days"); el.innerHTML="";
+  for(let i=0;i<7;i++){
+    const b=document.createElement("button");
+    b.className="day";b.id="day-"+i;b.textContent=DOW[i];
+    if(wStart.getTime()+i*DAY>today.getTime()) b.disabled=true;
+    const sts=[...Array(GAMES_PER_DAY).keys()].map(g=>getState(i,g));
+    if(sts.every(s=>s.done)) b.classList.add(sts.every(s=>s.done==="win")?"win":"loss");
+    if(i===dayIdx) b.setAttribute("aria-current","true");
+    b.onclick=()=>{dayIdx=i;game=firstOpenGame(i);lastRevealed=0;render()};
+    el.appendChild(b);
+  }
+}
+const puzzleNo=()=>Math.round((wStart-FIRST)/DAY)+dayIdx+1;
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const isHit=(g,a)=>g!==null&&norm(g)===norm(a);
+
+let shown={day:null,val:null};
+function renderRating(){
+  const v=dayRating(), num=document.getElementById("liveRating"), d=document.getElementById("liveDelta");
+  if(shown.day===dayIdx&&shown.val!==null&&v<shown.val){
+    d.textContent="−"+(shown.val-v); d.classList.remove("show"); void d.offsetWidth; d.classList.add("show");
+    num.classList.remove("hit"); void num.offsetWidth; num.classList.add("hit");
+  }
+  num.textContent=v; shown={day:dayIdx,val:v};
+}
+function render(){
+  if(!ME) return;
+  renderTabs();renderDays();renderRating();
+  const srv=SERVER[dayKey(dayIdx)];
+  if(srv&&doneCount()<GAMES_PER_DAY){
+    document.getElementById("card").innerHTML=`<div class="result" style="border:none;padding:0"><span class="verdict">Already played</span><h2>${srv.points} points</h2><p class="note">You finished this day on another device: ${srv.correct} of 4 correct${srv.streak>=3?` · 🔥 ${srv.streak}-day streak`:""}.</p></div>`;
+    return;
+  }
+  const [answer,level,...clues]=week.days[dayIdx][game];
+  const st=getState(dayIdx,game);
+  const revealed=st.done?5:Math.min(5,st.guesses.length+1);
+  let h=`<div class="card-head"><span class="eyebrow">Report No. ${puzzleNo()} · Player ${game+1}</span>
+    <span class="level"><span class="eyebrow">Level ${game+1}</span><span class="pips" aria-label="Difficulty ${game+1} of ${GAMES_PER_DAY}">${[1,2,3,4].map(n=>`<i class="pip${n<=game+1?" on":""}"></i>`).join("")}</span></span></div>
+    <ol class="clues">`;
+  clues.forEach((c,i)=>{
+    const open=i<revealed, fresh=open&&lastRevealed>0&&i>=lastRevealed;
+    h+=`<li class="clue${open?"":" locked"}${fresh?" fresh":""}"><span class="num">${i+1}</span>${open?`<span class="text">${esc(c)}</span>`:`<span class="text"><div class="bar" style="width:${55+((i*17)%35)}%"></div></span>`}</li>`;
+  });
+  h+=`</ol>`;
+  if(st.guesses.length){
+    h+=`<div class="guesses">${st.guesses.map(g=>g===null?`<span class="chip skip">Skipped</span>`:isHit(g,answer)?`<span class="chip hit">${esc(g)}</span>`:`<span class="chip">✕ ${esc(g)}</span>`).join("")}</div>`;
+  }
+  if(st.done){
+    const sq=st.guesses.map(g=>isHit(g,answer)?"h":g===null?"s":"m"); while(sq.length<5) sq.push("");
+    const next=[...Array(GAMES_PER_DAY).keys()].find(g=>!getState(dayIdx,g).done);
+    h+=`<div class="result"><span class="verdict ${st.done}">${st.done==="win"?`Got it in ${st.guesses.length} of 5`:"Out of clues"} · ${penalty(game)?`−${penalty(game)} rating`:"No rating lost"}</span>
+      <h2>${esc(answer)}</h2>
+      <div class="score">${sq.map(c=>`<i class="sq ${c}"></i>`).join("")}</div>
+      ${next!==undefined?`<div class="share"><button class="btn" id="nextBtn" style="padding-block:10px">Next: Player ${next+1}</button><span class="eyebrow">${GAMES_PER_DAY-doneCount()} left today</span></div>`:dayRecap()}
+      </div>`;
+  }else{
+    h+=`<div class="play">
+      <div class="field"><input id="guessInput" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Type a player's name" aria-label="Guess a player" aria-autocomplete="list" aria-controls="menu"><button class="btn" id="guessBtn">Guess</button>
+      <ul class="menu" id="menu" role="listbox" hidden></ul></div>
+      <div class="err" id="err"></div>
+      <div class="row"><span>Guess ${st.guesses.length+1} of 5</span>${revealed<5?`<button class="linkbtn" id="skipBtn">Skip to next clue</button>`:""}</div>
+    </div>`;
+  }
+  document.getElementById("card").innerHTML=h;
+  lastRevealed=revealed;
+  if(st.done) wireDone(); else wirePlay(answer,st);
+}
+
+function wirePlay(answer,st){
+  const input=document.getElementById("guessInput"),menu=document.getElementById("menu"),err=document.getElementById("err");
+  let opts=[],active=-1;
+  const guessed=n=>st.guesses.some(g=>g&&norm(g)===norm(n));
+  function hl(n,q){const i=norm(n).indexOf(q);if(i<0)return esc(n);return esc(n.slice(0,i))+"<b>"+esc(n.slice(i,i+q.length))+"</b>"+esc(n.slice(i+q.length))}
+  function show(){
+    const q=norm(input.value);
+    if(!q){menu.hidden=true;opts=[];return}
+    const starts=[],has=[];
+    for(const n of NAMES){
+      if(guessed(n)) continue;
+      const nn=norm(n);
+      if(nn.startsWith(q)||nn.split(" ").some(w=>w.startsWith(q))) starts.push(n);
+      else if(nn.includes(q)) has.push(n);
+    }
+    opts=starts.concat(has).slice(0,8); active=opts.length?0:-1;
+    menu.innerHTML=opts.length?opts.map((n,i)=>`<li class="opt" role="option" id="opt-${i}" aria-selected="${i===active}">${hl(n,q)}</li>`).join(""):`<li class="opt" aria-disabled="true">No player by that name</li>`;
+    menu.hidden=false;
+    menu.querySelectorAll(".opt[role=option]").forEach((li,i)=>li.onmousedown=e=>{e.preventDefault();input.value=opts[i];menu.hidden=true;submit()});
+  }
+  function move(d){if(!opts.length)return;active=(active+d+opts.length)%opts.length;menu.querySelectorAll(".opt").forEach((li,i)=>li.setAttribute("aria-selected",i===active))}
+  function submit(){
+    const q=norm(input.value); if(!q){err.textContent="Type a name first.";return}
+    let pick=NAMES.find(n=>norm(n)===q);
+    if(!pick&&opts.length&&active>=0) pick=opts[active];
+    if(!pick){err.textContent="Pick a player from the list.";return}
+    if(guessed(pick)){err.textContent="You already guessed that player.";return}
+    record(pick,answer,st);
+  }
+  input.addEventListener("input",()=>{err.textContent="";show()});
+  input.addEventListener("keydown",e=>{
+    if(e.key==="ArrowDown"){e.preventDefault();move(1)}
+    else if(e.key==="ArrowUp"){e.preventDefault();move(-1)}
+    else if(e.key==="Enter"){e.preventDefault();if(!menu.hidden&&active>=0)input.value=opts[active];menu.hidden=true;submit()}
+    else if(e.key==="Escape"){menu.hidden=true}
+  });
+  input.addEventListener("blur",()=>setTimeout(()=>menu.hidden=true,120));
+  document.getElementById("guessBtn").onclick=submit;
+  const skip=document.getElementById("skipBtn"); if(skip) skip.onclick=()=>record(null,answer,st);
+}
+function record(g,answer,st){
+  st.guesses.push(g);
+  if(isHit(g,answer)) st.done="win"; else if(st.guesses.length>=5) st.done="loss";
+  saveState(dayIdx,game); render();
+  if(st.done&&doneCount()===GAMES_PER_DAY) submitDay(dayIdx);
+  if(!st.done&&g!==null){const i=document.getElementById("guessInput");if(i)i.focus()}
+}
+/* Rating: start at 1000 each day. Each wrong guess or skip costs (5 − level) × 20, so easier players cost more; missing a player entirely costs 5 × that. */
+const START_RATING=1000;
+function penalty(g){const st=getState(dayIdx,g);const misses=st.done==="win"?st.guesses.length-1:st.done==="loss"?5:st.guesses.length;return misses*(5-(g+1))*20}
+const dayRating=()=>START_RATING-[...Array(GAMES_PER_DAY).keys()].reduce((n,g)=>n+penalty(g),0);
+const SITE="https://claude.ai/artifact/CSLFB8r5dq6fzf6LijUXpn";
+const doneCount=()=>[...Array(GAMES_PER_DAY).keys()].filter(g=>getState(dayIdx,g).done).length;
+function dayRows(){
+  return week.days[dayIdx].map((p,g)=>{const st=getState(dayIdx,g);return{p,st,sq:st.guesses.map(x=>isHit(x,p[0])?"🟩":x===null?"⬜":"🟥").join("")}});
+}
+function dayRecap(){
+  const rows=dayRows(), wins=rows.filter(r=>r.st.done==="win").length;
+  return `<div class="recap"><span class="verdict ${wins===GAMES_PER_DAY?"win":""}">Day complete · ${wins} of ${GAMES_PER_DAY} correct</span>
+    <div class="rating"><span class="rating-num">${dayPoints()}</span><span class="eyebrow">Points<br>today</span></div>
+    ${serverNote()}
+    <ul class="recap-list">${rows.map((r,g)=>`<li><span class="eyebrow">P${g+1}</span><span class="score">${r.st.guesses.map(x=>`<i class="sq ${isHit(x,r.p[0])?"h":x===null?"s":"m"}"></i>`).join("")}</span><span class="recap-name">${esc(r.p[0])}</span><span class="recap-pen">${penalty(g)?"−"+penalty(g):"0"}</span></li>`).join("")}</ul>
+    <button class="btn share-btn" id="shareBtn">Share results</button>
+    <span class="eyebrow" id="copyMsg" role="status"></span>
+    <textarea id="shareText" rows="8" readonly hidden aria-label="Results to copy"></textarea></div>`;
+}
+function shareText(){
+  const rows=dayRows(), wins=rows.filter(r=>r.st.done==="win").length;
+  const total=rows.reduce((n,r)=>n+(r.st.done==="win"?r.st.guesses.length:0),0);
+  const d=wStart.getTime()+dayIdx*DAY;
+  const date=new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  return `Ball Knowledge 🏀 No. ${puzzleNo()} · ${date}\n🏆 ${dayPoints()} points · ${wins}/${GAMES_PER_DAY} correct${streakLine()}\n\n${rows.map(r=>r.sq).join("\n")}`;
+}
+function wireDone(){
+  const nb=document.getElementById("nextBtn");
+  if(nb) nb.onclick=()=>{game=firstOpenGame(dayIdx);lastRevealed=0;render()};
+  const btn=document.getElementById("shareBtn"); if(!btn||btn.disabled) return;
+  const msg=document.getElementById("copyMsg"),ta=document.getElementById("shareText");
+  btn.onclick=()=>{
+    const text=shareText();
+    const ok=()=>{btn.textContent="Copied";msg.textContent="Paste it into iMessage";setTimeout(()=>{btn.textContent="Share results"},2500)};
+    const fallback=()=>{ta.value=text;ta.hidden=false;ta.focus();ta.setSelectionRange(0,text.length);msg.textContent="Tap Copy on the selected text, then paste it into iMessage"};
+    try{navigator.clipboard.writeText(text).then(ok,fallback)}catch(e){fallback()}
+  };
+}
+/* ---------- Supabase ---------- */
+const SB_URL="https://xaqqdsfevapmpeyfjbcs.supabase.co";
+const SB_KEY="sb_publishable_r360BkNeDoKP-gZh3NlnJQ_uiDiDT2I";
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const EMAIL_DOMAIN="players.ballknowledge.app";
+const SERVER={}; /* day key -> {points, base_points, bonus, streak, correct} */
+const dayKey=i=>keyOf(new Date(wStart.getTime()+i*DAY));
+const dayPoints=()=>{const r=SERVER[dayKey(dayIdx)];return r?r.points:dayRating()};
+function serverNote(){
+  const k=dayKey(dayIdx), r=SERVER[k];
+  if(k!==todayKey()) return `<span class="note">Practice day: only today's game counts on the leaderboard.</span>`;
+  if(!r) return `<span class="note" id="saveNote">Saving to the leaderboard…</span>`;
+  return r.bonus?`<span class="bonus">🔥 ${r.streak}-day streak · +${r.bonus} bonus</span>`:(r.streak?`<span class="note">Perfect-day streak: ${r.streak}. Reach 3 for a +100 daily bonus.</span>`:"");
+}
+function streakLine(){const r=SERVER[dayKey(dayIdx)];return r&&r.streak>=3?` · 🔥${r.streak}`:""}
+function todayKey(){return keyOf(today)}
+
+async function submitDay(i){
+  const k=dayKey(i); if(k!==todayKey()||SERVER[k]) return;
+  const wins=week.days[i].filter((p,g)=>getState(i,g).done==="win").length;
+  const {error}=await sb.from("results").insert({day:k,base_points:dayRating(),correct:wins});
+  if(error&&error.code!=="23505"){const n=document.getElementById("saveNote");if(n)n.textContent="Couldn't save to the leaderboard. Check your connection and reopen the page.";return}
+  await loadMine(); render();
+}
+async function loadMine(){
+  const {data}=await sb.from("results").select("day,points,base_points,bonus,streak,correct").eq("user_id",ME.id).gte("day",week.start);
+  (data||[]).forEach(r=>SERVER[r.day]=r);
+}
+async function retryPending(){
+  /* a finished today that never reached the server (closed tab, offline) */
+  const i=week.days.findIndex((_,d)=>dayKey(d)===todayKey());
+  if(i>=0&&!SERVER[todayKey()]&&[...Array(GAMES_PER_DAY).keys()].every(g=>getState(i,g).done)){const keep=dayIdx;dayIdx=i;await submitDay(i);dayIdx=keep}
+}
+
+async function loadBoard(){
+  const body=document.getElementById("boardBody");
+  const {data,error}=await sb.from("leaderboard").select("id,username,total_points,rating,streak,days_played").order("total_points",{ascending:false}).limit(200);
+  if(error){body.innerHTML=`<tr><td></td><td>Couldn't load the leaderboard.</td><td></td><td></td></tr>`;return}
+  const rows=(data||[]).filter(r=>r.days_played>0);
+  if(!rows.length){body.innerHTML=`<tr><td></td><td style="white-space:normal">No scores yet. Finish today's four players to get on the board.</td><td></td><td></td></tr>`;return}
+  body.innerHTML="";
+  rows.forEach((r,i)=>{
+    const tr=document.createElement("tr"); if(r.id===ME.id) tr.className="me";
+    const c=[i+1,"",Number(r.rating).toFixed(1),r.total_points.toLocaleString()];
+    c.forEach((v,j)=>{const td=document.createElement("td");
+      if(j===1){td.textContent=r.username;if(r.streak>=3){const f=document.createElement("span");f.className="flame";f.textContent="🔥"+r.streak;td.appendChild(f)}}
+      else td.textContent=v; tr.appendChild(td)});
+    body.appendChild(tr);
+  });
+}
+
+function show(view){
+  document.getElementById("authView").hidden=view!=="auth";
+  document.getElementById("nav").hidden=view==="auth";
+  document.getElementById("gameView").hidden=view!=="play";
+  document.getElementById("boardView").hidden=view!=="board";
+  document.querySelector(".live").style.visibility=view==="play"?"visible":"hidden";
+  document.getElementById("navPlay").setAttribute("aria-pressed",view==="play");
+  document.getElementById("navBoard").setAttribute("aria-pressed",view==="board");
+  if(view==="board") loadBoard();
+}
+document.getElementById("navPlay").onclick=()=>{show("play");render()};
+document.getElementById("navBoard").onclick=()=>show("board");
+document.getElementById("signOut").onclick=async()=>{await sb.auth.signOut()};
+
+const authErr=document.getElementById("authErr");
+function creds(){
+  const u=document.getElementById("authUser").value.trim().toLowerCase(), p=document.getElementById("authPass").value;
+  if(!/^[a-z0-9_]{3,16}$/.test(u)){authErr.textContent="Usernames are 3–16 letters, numbers or underscores.";return null}
+  if(p.length<6){authErr.textContent="Passwords need at least 6 characters.";return null}
+  return {u,p,email:`${u}@${EMAIL_DOMAIN}`};
+}
+function busy(on){document.getElementById("signInBtn").disabled=on;document.getElementById("signUpBtn").disabled=on}
+document.getElementById("authForm").addEventListener("submit",async e=>{
+  e.preventDefault(); authErr.textContent=""; const c=creds(); if(!c) return; busy(true);
+  const {error}=await sb.auth.signInWithPassword({email:c.email,password:c.p}); busy(false);
+  if(error) authErr.textContent=/invalid/i.test(error.message)?"Wrong username or password.":error.message;
+});
+document.getElementById("signUpBtn").onclick=async()=>{
+  authErr.textContent=""; const c=creds(); if(!c) return; busy(true);
+  const {data,error}=await sb.auth.signUp({email:c.email,password:c.p,options:{data:{username:c.u}}}); busy(false);
+  if(error){authErr.textContent=/registered|exists/i.test(error.message)?"That username is taken.":error.message;return}
+  if(!data.session) authErr.textContent="Account created, but sign-in isn't open yet. Try Sign in in a minute.";
+};
+
+async function enter(session){
+  if(!session){ME=null;show("auth");return}
+  if(ME&&ME.id===session.user.id) return;
+  const {data}=await sb.from("profiles").select("username").eq("id",session.user.id).maybeSingle();
+  ME={id:session.user.id,username:(data&&data.username)||session.user.email.split("@")[0]};
+  for(const k in mem) delete mem[k]; for(const k in SERVER) delete SERVER[k];
+  document.getElementById("whoName").textContent="@"+ME.username;
+  dayIdx=todayIdx; game=firstOpenGame(dayIdx); lastRevealed=0; shown={day:null,val:null};
+  await loadMine(); await retryPending();
+  show("play"); render();
+}
+sb.auth.onAuthStateChange((_evt,session)=>{setTimeout(()=>enter(session),0)});
+</script>
+</body>
+</html>
