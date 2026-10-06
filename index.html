@@ -132,6 +132,18 @@ ol.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .flame{font-weight:500;color:var(--muted);font-size:.85rem;margin-left:4px}
 .note{font-size:.85rem;color:var(--muted)}
 .bonus{font:500 .8rem var(--mono);color:var(--hit);letter-spacing:.06em;text-transform:uppercase}
+.cmp{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.cmp-track{position:relative;height:28px;margin-inline:11px}
+.cmp-track::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;margin-top:-1px;background:var(--line);border-radius:2px}
+.cmp-tick{position:absolute;top:50%;width:2px;height:8px;margin:-4px 0 0 -1px;background:var(--line)}
+.cmp-avg,.cmp-you{position:absolute;top:50%;border-radius:50%;transform:translate(-50%,-50%)}
+.cmp-avg{width:22px;height:22px;background:color-mix(in srgb,var(--accent) 30%,transparent);border:2px solid var(--accent)}
+.cmp-you{width:10px;height:10px;background:var(--ink);box-shadow:0 0 0 2px var(--paper)}
+.cmp-you.win{background:var(--hit)} .cmp-you.loss{background:var(--miss)}
+.cmp-labels{position:relative;height:1.1em;margin-inline:11px;font:500 .72rem var(--mono);color:var(--muted)}
+.cmp-labels span{position:absolute;transform:translateX(-50%)}
+.cmp-key{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.cmp-key b{color:var(--ink);font-weight:600}
 .howto{font-size:.85rem;color:var(--muted);text-align:center;text-wrap:balance}
 @media (prefers-reduced-motion:reduce){.clue.fresh .text,.live-num.hit{animation:none}.live-delta.show{animation:none;opacity:1}}
 </style>
@@ -260,6 +272,7 @@ function render(){
     h+=`<div class="result"><span class="verdict ${s.done}">${s.done==="win"?`Got it in ${s.guesses.length} of 5`:"Out of clues"} · ${penalty(game)?`−${penalty(game)} rating`:"No rating lost"}</span>
       <h2>${esc(s.answer)}</h2>
       <div class="score">${sq.map(c=>`<i class="sq ${c}"></i>`).join("")}</div>
+      ${compareLine(s)}
       ${next>=0?`<div class="share"><button class="btn" id="nextBtn" style="padding-block:10px">Next: Player ${next+1}</button><span class="eyebrow">${GAMES_PER_DAY-doneCount()} left today</span></div>`:dayRecap()}
       </div>`;
   }else{
@@ -275,6 +288,25 @@ function render(){
   if(s.done) wireDone(); else wirePlay(s);
 }
 
+/* Your guesses vs. everyone's average on this player. A miss counts as 6 ("X"). */
+function compareLine(s){
+  if(!s.stats||!s.stats.players) return "";
+  const mine=s.done==="win"?s.guesses.length:6, avg=Number(s.stats.avg), n=s.stats.players;
+  const pos=v=>((Math.min(6,Math.max(1,v))-1)/5*100).toFixed(1)+"%";
+  const ticks=[1,2,3,4,5,6].map(v=>`<i class="cmp-tick" style="left:${pos(v)}"></i>`).join("");
+  const labels=[1,2,3,4,5,6].map(v=>`<span style="left:${pos(v)}">${v===6?"X":v}</span>`).join("");
+  const fmt=v=>v>=6?"X":(Math.round(v*10)/10).toString();
+  let verdict;
+  if(n<2) verdict="You're the first to finish this player.";
+  else if(mine<avg-0.05) verdict="Better than average.";
+  else if(mine>avg+0.05) verdict="Worse than average.";
+  else verdict="Right on the average.";
+  return `<div class="cmp" aria-label="You took ${fmt(mine)} guesses; the average is ${fmt(avg)} across ${n} players">
+    <div class="cmp-track">${ticks}<i class="cmp-avg" style="left:${pos(avg)}"></i><i class="cmp-you ${s.done}" style="left:${pos(mine)}"></i></div>
+    <div class="cmp-labels">${labels}</div>
+    <div class="cmp-key"><span>You <b>${fmt(mine)}</b></span><span>Average <b>${fmt(avg)}</b> · ${n} player${n===1?"":"s"}</span><span>${verdict}</span></div>
+  </div>`;
+}
 function dayRecap(){
   const wins=slots().filter(s=>s.done==="win").length, r=DAYSTATE.result;
   let note;
