@@ -216,7 +216,7 @@ function firstOpen(){const i=slots().findIndex(s=>!s.done);return i<0?0:i}
 
 /* ---------- rendering ---------- */
 function renderRating(){
-  const v=dayRating(), num=$("liveRating"), d=$("liveDelta");
+  const r=DAYSTATE&&DAYSTATE.result, v=r&&doneCount()<GAMES_PER_DAY?r.points:dayRating(), num=$("liveRating"), d=$("liveDelta");
   if(shown.day===dayIdx&&shown.val!==null&&v<shown.val){
     d.textContent="−"+(shown.val-v); d.classList.remove("show"); void d.offsetWidth; d.classList.add("show");
     num.classList.remove("hit"); void num.offsetWidth; num.classList.add("hit");
