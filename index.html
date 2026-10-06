@@ -173,172 +173,135 @@ ol.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 </div>
 
 <script>
-const GAMES_PER_DAY=4;
+/* Ball Knowledge — puzzles, guesses and scoring live in Supabase. This page only shows what the server reveals. */
+const SB_URL="https://xaqqdsfevapmpeyfjbcs.supabase.co";
+const SB_KEY="sb_publishable_r360BkNeDoKP-gZh3NlnJQ_uiDiDT2I";
+const EMAIL_DOMAIN="players.ballknowledge.app";
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
 
-/* ---- Weekly puzzles: days[Mon..Sun] = 4 puzzles, easiest first. Puzzle = [answer, level, clue1..clue5] ---- */
-const WEEKS=[{start:"2026-10-05",days:[
- [ // Mon
-  ["Shaquille O'Neal",1,"No. 1 overall pick in 1992 out of LSU.","Played for six different franchises.","Four titles, three straight Finals MVPs, and the 2000 MVP.","Dominant center nicknamed \"The Diesel.\"","Wore #32 in Orlando and #34 for the Lakers."],
-  ["Steve Nash",2,"Drafted 15th overall in 1996 out of Santa Clara.","Born in South Africa and raised in Canada.","Back-to-back MVPs in 2005 and 2006.","Point guard who joined the 50-40-90 club four times.","Wore #13 for the Phoenix Suns."],
-  ["Tony Parker",3,"Drafted 28th overall in 2001 at age 19.","Born in Belgium and raised in France.","Four titles and the 2007 Finals MVP.","Point guard known for his teardrop floater.","Wore #9 for the San Antonio Spurs."],
-  ["Shane Battier",4,"Drafted 6th overall in 2001 after winning a national title at Duke.","Played for Memphis, Houston, and Miami.","Won back-to-back titles in 2012 and 2013.","Called the \"No-Stats All-Star\" for defense that showed up in analytics but not box scores.","Wore #31 throughout his career."]],
- [ // Tue
-  ["LeBron James",1,"Went straight from high school to No. 1 overall pick.","Won titles with three different franchises.","Four MVPs and four Finals MVPs.","Became the NBA's all-time leading scorer in 2023.","From Akron, Ohio; \"King James.\""],
-  ["Allen Iverson",2,"No. 1 overall pick in 1996 out of Georgetown.","Played 14 seasons for four franchises.","2001 MVP, four scoring titles, and 11 All-Star selections.","Six-foot guard famous for his crossover; \"The Answer.\"","Wore #3 for the Philadelphia 76ers."],
-  ["Vince Carter",3,"Drafted 5th overall in 1998, then traded on draft night.","Played 22 seasons, the most in NBA history.","1999 Rookie of the Year and eight-time All-Star.","Won the 2000 Slam Dunk Contest; \"Vinsanity.\"","Wore #15 for the Toronto Raptors."],
-  ["Matt Bonner",5,"Second-round pick in 2003 who spent his first pro season in Italy.","Played college ball at Florida.","Won two championships seven years apart.","Stretch big man nicknamed \"The Red Mamba.\"","Wore #15 for the San Antonio Spurs."]],
- [ // Wed
-  ["Kevin Garnett",2,"Drafted 5th overall in 1995 straight out of a Chicago high school.","Played 21 seasons, starting and finishing with the same franchise.","2004 MVP and 2008 Defensive Player of the Year.","Won his only title in 2008 as part of a \"Big Three.\"","Wore #21 in Minnesota and #5 in Boston."],
-  ["Giannis Antetokounmpo",2,"Drafted 15th overall in 2013 out of Greece's second division.","Born in Athens to Nigerian parents; several brothers also reached the NBA.","Back-to-back MVPs, 2020 Defensive Player of the Year, and 2021 Finals MVP.","Long-limbed forward nicknamed \"The Greek Freak.\"","Wore #34 when he won the 2021 title with Milwaukee."],
-  ["Pau Gasol",3,"Drafted 3rd overall in 2001 and traded to Memphis that night.","His younger brother also became an NBA All-Star.","Two titles, six All-Star selections, and 2002 Rookie of the Year.","Spanish big man with two Olympic silver medals.","Wore #16 for the Los Angeles Lakers."],
-  ["Robert Horry",4,"Drafted 11th overall in 1992 out of Alabama.","Played 16 seasons for four franchises.","Won seven championships.","Forward nicknamed \"Big Shot Bob\" for his playoff daggers.","Wore #5 for the Lakers and Spurs."]],
- [ // Thu
-  ["Michael Jordan",1,"Drafted 3rd overall in 1984 out of North Carolina.","Left the NBA in 1994 to play minor league baseball.","Six titles, six Finals MVPs, and five MVPs.","Shooting guard known as \"Air.\"","Wore #23 for the Chicago Bulls."],
-  ["Dwyane Wade",2,"Drafted 5th overall in 2003 out of Marquette.","Chicago native who played for three franchises.","Three titles, the 2006 Finals MVP, and 13 All-Star selections.","Shooting guard nicknamed \"Flash.\"","Wore #3 for the Miami Heat."],
-  ["Manu Ginóbili",3,"Taken 57th overall in 1999, near the very end of the draft.","Won a EuroLeague title in Italy before joining the NBA.","Four titles and the 2008 Sixth Man of the Year.","Argentine guard who led his country to Olympic gold in 2004.","Wore #20 for the San Antonio Spurs."],
-  ["Udonis Haslem",5,"Went undrafted in 2002 and played a season in France.","Spent all 20 NBA seasons with his hometown team.","Won three championships.","Power forward and longtime team captain.","Wore #40 for the Miami Heat."]],
- [ // Fri
-  ["Tim Duncan",1,"No. 1 overall pick in 1997 out of Wake Forest.","Grew up in the U.S. Virgin Islands as a competitive swimmer.","Five titles, two MVPs, and three Finals MVPs.","Power forward nicknamed \"The Big Fundamental.\"","Wore #21 for the San Antonio Spurs."],
-  ["Kawhi Leonard",2,"Drafted 15th overall in 2011 and traded on draft night.","Played college ball at San Diego State.","Two titles, two Finals MVPs, and two Defensive Player of the Year awards.","Hit a four-bounce buzzer-beater to win a 2019 playoff series.","Wore #2 in San Antonio and Toronto."],
-  ["Chris Bosh",3,"Drafted 4th overall in 2003 after one year at Georgia Tech.","Played 13 seasons for two franchises.","11-time All-Star; Hall of Fame class of 2021.","Won back-to-back titles in Miami's Big Three.","Wore #4 in Toronto and #1 in Miami."],
-  ["Boris Diaw",4,"Drafted 21st overall in 2003 out of France.","His mother played professional basketball in France.","2006 Most Improved Player and a 2014 champion.","Playmaking big man famous for his love of espresso.","Wore #33 for the San Antonio Spurs."]],
- [ // Sat
-  ["Kobe Bryant",1,"Drafted 13th overall in 1996 out of high school and traded on draft night.","Son of a former NBA player; spent part of his childhood in Italy.","Five titles, the 2008 MVP, and two Finals MVPs.","Scored 81 points in a 2006 game; \"Black Mamba.\"","Wore #8 and #24 for the Los Angeles Lakers."],
-  ["Stephen Curry",2,"Drafted 7th overall in 2009 out of Davidson.","Son of a longtime NBA sharpshooter.","Back-to-back MVPs, including the first unanimous one.","NBA's all-time leader in made three-pointers.","Wears #30 for Golden State."],
-  ["Paul Pierce",2,"Drafted 10th overall in 1998 out of Kansas.","Grew up in Inglewood, California, as a Lakers fan.","2008 Finals MVP and 10-time All-Star.","Small forward nicknamed \"The Truth.\"","Wore #34 for the Boston Celtics."],
-  ["Jimmy Butler",3,"Drafted 30th overall in 2011 out of Marquette.","Played junior college ball at Tyler JC in Texas.","Six-time All-Star who led an 8th seed to the 2023 Finals.","Two-way wing who sold coffee in the 2020 bubble.","Wore #22 for the Miami Heat."]],
- [ // Sun
-  ["Kevin Durant",1,"Drafted 2nd overall in 2007 out of Texas.","Grew up in Prince George's County, Maryland.","2014 MVP and two Finals MVPs.","Scoring forward with four Olympic gold medals; \"Slim Reaper.\"","Wore #35 for Oklahoma City and Golden State."],
-  ["Nikola Jokić",2,"Taken 41st overall in 2014 while the broadcast showed a commercial.","Born in Sombor, Serbia.","Three MVPs and the 2023 Finals MVP.","Center known for elite passing; \"The Joker.\"","Wore #15 for the Denver Nuggets."],
-  ["Dwight Howard",2,"No. 1 overall pick in 2004 straight out of an Atlanta high school.","Played for seven NBA franchises.","Three straight Defensive Player of the Year awards.","Center who won the 2008 Slam Dunk Contest in a Superman cape.","Wore #12 for the Orlando Magic."],
-  ["Ray Allen",3,"Drafted 5th overall in 1996 out of UConn and traded on draft night.","Starred in the 1998 Spike Lee film \"He Got Game.\"","Two titles and 10 All-Star selections.","Shooting guard whose corner three saved Game 6 of the 2013 Finals.","Wore #34 in Milwaukee and #20 in Boston."]]
-]}];
-
-/* ---- Guess pool (answers are added automatically) ---- */
-const POOL="Hakeem Olajuwon,David Robinson,Karl Malone,John Stockton,Scottie Pippen,Dennis Rodman,Charles Barkley,Patrick Ewing,Reggie Miller,Gary Payton,Clyde Drexler,Alonzo Mourning,Dikembe Mutombo,Chris Webber,Grant Hill,Penny Hardaway,Jason Kidd,Chris Paul,Carmelo Anthony,Russell Westbrook,James Harden,Anthony Davis,Damian Lillard,Kyrie Irving,Klay Thompson,Draymond Green,Tracy McGrady,Yao Ming,Derrick Rose,Joel Embiid,Jayson Tatum,Kevin Love,Derek Fisher,Rajon Rondo,Andre Iguodala,Kyle Korver,Patty Mills,Danny Green,Mario Chalmers,Shai Gilgeous-Alexander,Victor Wembanyama,Devin Booker,Paul George,Luka Dončić,Dirk Nowitzki,Anthony Edwards,Jaylen Brown,Kyle Lowry,DeMar DeRozan,Blake Griffin,Rasheed Wallace,Ben Wallace,Chauncey Billups,Richard Hamilton,Tayshaun Prince,Lamar Odom,Metta World Peace,Shawn Marion,Amar'e Stoudemire,Jermaine O'Neal,Zach Randolph,Marc Gasol,Mike Conley,Tony Allen,Rudy Gobert,Bam Adebayo,Kemba Walker,Isaiah Thomas,Gordon Hayward,LaMarcus Aldridge,Brandon Roy,Gilbert Arenas,Baron Davis,Peja Stojaković,Vlade Divac,Mike Bibby,Steve Kerr,Toni Kukoč,Horace Grant,Sam Cassell,Alonzo Mourning,Tim Hardaway,Mitch Richmond,Shawn Kemp,Glen Rice,Dwight Howard,Jason Terry,J.J. Redick,Jrue Holiday,Khris Middleton,Brook Lopez,Al Horford,Joakim Noah,Luol Deng,Andre Drummond,Kevin McHale";
-
-/* ---- helpers ---- */
-const norm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ").trim();
-const DAY=86400000;
-const pad=n=>String(n).padStart(2,"0");
-const keyOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const parse=k=>{const[y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)};
-const today=parse(keyOf(new Date()));
-const FIRST=parse(WEEKS[0].start);
-let week=WEEKS[0];
-for(const w of WEEKS){ if(parse(w.start)<=today) week=w; }
-const wStart=parse(week.start);
-const todayIdx=Math.max(0,Math.min(6,Math.round((today-wStart)/DAY)));
+const GAMES_PER_DAY=4, START_RATING=1000, DAY=86400000;
 const DOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const norm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ").trim();
+const parse=k=>{const[y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)};
 
-const NAMES=(()=>{const m=new Map();
-  POOL.split(",").forEach(n=>m.set(norm(n),n.trim()));
-  WEEKS.forEach(w=>w.days.forEach(d=>d.forEach(p=>m.set(norm(p[0]),p[0]))));
-  return [...m.values()].sort((a,b)=>a.localeCompare(b));})();
-
-const store={
-  get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
-  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-};
-const mem={};
-let ME=null; /* {id, username} */
-const stateKey=(day,g)=>`bk:${ME?ME.id:"anon"}:${week.start}:${day}:${g}`;
-function getState(day,g){const k=stateKey(day,g);if(!mem[k])mem[k]=store.get(k)||{guesses:[],done:null};return mem[k]}
-function saveState(day,g){const k=stateKey(day,g);store.set(k,mem[k])}
-
-let dayIdx=todayIdx;
-let game=0;
-let lastRevealed=0;
-document.getElementById("todayLabel").textContent=today.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
-
-function firstOpenGame(day){for(let g=0;g<GAMES_PER_DAY;g++){if(!getState(day,g).done)return g}return 0}
-
-/* ---- render ---- */
-function renderTabs(){
-  const el=document.getElementById("tabs"); el.innerHTML="";
-  for(let g=0;g<GAMES_PER_DAY;g++){
-    const st=getState(dayIdx,g);
-    const b=document.createElement("button");
-    b.className="tab";b.setAttribute("role","tab");b.id="tab-"+g;b.textContent="Player "+(g+1);
-    b.setAttribute("aria-selected",g===game);
-    if(st.done){const d=document.createElement("span");d.className="dot "+st.done;b.appendChild(d)}
-    b.onclick=()=>{game=g;lastRevealed=0;render()};
-    el.appendChild(b);
-  }
-}
-function renderDays(){
-  const el=document.getElementById("days"); el.innerHTML="";
-  for(let i=0;i<7;i++){
-    const b=document.createElement("button");
-    b.className="day";b.id="day-"+i;b.textContent=DOW[i];
-    if(wStart.getTime()+i*DAY>today.getTime()) b.disabled=true;
-    const sts=[...Array(GAMES_PER_DAY).keys()].map(g=>getState(i,g));
-    if(sts.every(s=>s.done)) b.classList.add(sts.every(s=>s.done==="win")?"win":"loss");
-    if(i===dayIdx) b.setAttribute("aria-current","true");
-    b.onclick=()=>{dayIdx=i;game=firstOpenGame(i);lastRevealed=0;render()};
-    el.appendChild(b);
-  }
-}
-const puzzleNo=()=>Math.round((wStart-FIRST)/DAY)+dayIdx+1;
-const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const isHit=(g,a)=>g!==null&&norm(g)===norm(a);
-
+let ME=null, NAMES=[], WEEK=null, DAYSTATE=null, dayIdx=0, game=0, lastRevealed=0, busyGuess=false;
 let shown={day:null,val:null};
+
+/* ---------- derived values ---------- */
+const slots=()=>DAYSTATE?DAYSTATE.slots:[];
+const isToday=()=>WEEK&&WEEK.days[dayIdx]&&WEEK.days[dayIdx].day===WEEK.today;
+function misses(s){return s.done==="win"?s.guesses.length-1:s.done==="loss"?5:s.guesses.length}
+function penalty(g){const s=slots()[g];return s?misses(s)*(5-(g+1))*20:0}
+const dayRating=()=>START_RATING-[0,1,2,3].reduce((n,g)=>n+penalty(g),0);
+const doneCount=()=>slots().filter(s=>s.done).length;
+const dayPoints=()=>DAYSTATE&&DAYSTATE.result?DAYSTATE.result.points:dayRating();
+function puzzleNo(){const d=parse(WEEK.days[dayIdx].day),f=parse(WEEK.first_day||WEEK.week_start);return Math.round((d-f)/DAY)+1}
+function sqClass(s,i){const g=s.guesses[i];if(g===null)return"s";return s.done==="win"&&i===s.guesses.length-1?"h":"m"}
+const sqEmoji={h:"🟩",m:"🟥",s:"⬜"};
+function firstOpen(){const i=slots().findIndex(s=>!s.done);return i<0?0:i}
+
+/* ---------- rendering ---------- */
 function renderRating(){
-  const v=dayRating(), num=document.getElementById("liveRating"), d=document.getElementById("liveDelta");
+  const v=dayRating(), num=$("liveRating"), d=$("liveDelta");
   if(shown.day===dayIdx&&shown.val!==null&&v<shown.val){
     d.textContent="−"+(shown.val-v); d.classList.remove("show"); void d.offsetWidth; d.classList.add("show");
     num.classList.remove("hit"); void num.offsetWidth; num.classList.add("hit");
   }
   num.textContent=v; shown={day:dayIdx,val:v};
 }
+function renderTabs(){
+  const el=$("tabs"); el.innerHTML="";
+  for(let g=0;g<GAMES_PER_DAY;g++){
+    const s=slots()[g], b=document.createElement("button");
+    b.className="tab"; b.setAttribute("role","tab"); b.id="tab-"+g; b.textContent="Player "+(g+1);
+    b.setAttribute("aria-selected",g===game); b.disabled=!s;
+    if(s&&s.done){const d=document.createElement("span");d.className="dot "+s.done;b.appendChild(d)}
+    b.onclick=()=>{game=g;lastRevealed=0;render()};
+    el.appendChild(b);
+  }
+}
+function renderDays(){
+  const el=$("days"); el.innerHTML="";
+  WEEK.days.forEach((d,i)=>{
+    const b=document.createElement("button");
+    b.className="day"; b.id="day-"+i; b.textContent=DOW[i]; b.disabled=!d.open;
+    if(d.done===4) b.classList.add(d.wins===4?"win":"loss");
+    if(i===dayIdx) b.setAttribute("aria-current","true");
+    b.onclick=()=>openDay(i);
+    el.appendChild(b);
+  });
+}
 function render(){
-  if(!ME) return;
-  renderTabs();renderDays();renderRating();
-  const srv=SERVER[dayKey(dayIdx)];
-  if(srv&&doneCount()<GAMES_PER_DAY){
-    document.getElementById("card").innerHTML=`<div class="result" style="border:none;padding:0"><span class="verdict">Already played</span><h2>${srv.points} points</h2><p class="note">You finished this day on another device: ${srv.correct} of 4 correct${srv.streak>=3?` · ${srv.streak}-day streak`:""}.</p></div>`;
+  if(!ME||!WEEK) return;
+  renderDays();
+  const card=$("card");
+  if(!DAYSTATE){renderTabs();card.innerHTML=`<p class="note">Loading…</p>`;return}
+  renderTabs(); renderRating();
+  if(!slots().length){card.innerHTML=`<p class="note">No players for this day yet. Check back soon.</p>`;return}
+  if(DAYSTATE.result&&doneCount()<GAMES_PER_DAY){
+    const r=DAYSTATE.result;
+    card.innerHTML=`<div class="result" style="border:none;padding:0"><span class="verdict">Already played</span><h2>${r.points} points</h2><p class="note">You finished this day earlier: ${r.correct} of 4 correct${r.streak>=3?` · ${r.streak}-day streak`:""}.</p></div>`;
     return;
   }
-  const [answer,level,...clues]=week.days[dayIdx][game];
-  const st=getState(dayIdx,game);
-  const revealed=st.done?5:Math.min(5,st.guesses.length+1);
+  const s=slots()[game], revealed=s.clues.length;
   let h=`<div class="card-head"><span class="eyebrow">Report No. ${puzzleNo()} · Player ${game+1}</span>
-    <span class="level"><span class="eyebrow">Level ${game+1}</span><span class="pips" aria-label="Difficulty ${game+1} of ${GAMES_PER_DAY}">${[1,2,3,4].map(n=>`<i class="pip${n<=game+1?" on":""}"></i>`).join("")}</span></span></div>
-    <ol class="clues">`;
-  clues.forEach((c,i)=>{
+    <span class="level"><span class="eyebrow">Level ${game+1}</span><span class="pips" aria-label="Difficulty ${game+1} of ${GAMES_PER_DAY}">${[1,2,3,4].map(n=>`<i class="pip${n<=game+1?" on":""}"></i>`).join("")}</span></span></div><ol class="clues">`;
+  for(let i=0;i<5;i++){
     const open=i<revealed, fresh=open&&lastRevealed>0&&i>=lastRevealed;
-    h+=`<li class="clue${open?"":" locked"}${fresh?" fresh":""}"><span class="num">${i+1}</span>${open?`<span class="text">${esc(c)}</span>`:`<span class="text"><div class="bar" style="width:${55+((i*17)%35)}%"></div></span>`}</li>`;
-  });
-  h+=`</ol>`;
-  if(st.guesses.length){
-    h+=`<div class="guesses">${st.guesses.map(g=>g===null?`<span class="chip skip">Skipped</span>`:isHit(g,answer)?`<span class="chip hit">${esc(g)}</span>`:`<span class="chip">✕ ${esc(g)}</span>`).join("")}</div>`;
+    h+=`<li class="clue${open?"":" locked"}${fresh?" fresh":""}"><span class="num">${i+1}</span>${open?`<span class="text">${esc(s.clues[i])}</span>`:`<span class="text"><div class="bar" style="width:${55+((i*17)%35)}%"></div></span>`}</li>`;
   }
-  if(st.done){
-    const sq=st.guesses.map(g=>isHit(g,answer)?"h":g===null?"s":"m"); while(sq.length<5) sq.push("");
-    const next=[...Array(GAMES_PER_DAY).keys()].find(g=>!getState(dayIdx,g).done);
-    h+=`<div class="result"><span class="verdict ${st.done}">${st.done==="win"?`Got it in ${st.guesses.length} of 5`:"Out of clues"} · ${penalty(game)?`−${penalty(game)} rating`:"No rating lost"}</span>
-      <h2>${esc(answer)}</h2>
+  h+=`</ol>`;
+  if(s.guesses.length) h+=`<div class="guesses">${s.guesses.map((g,i)=>g===null?`<span class="chip skip">Skipped</span>`:sqClass(s,i)==="h"?`<span class="chip hit">${esc(g)}</span>`:`<span class="chip">✕ ${esc(g)}</span>`).join("")}</div>`;
+  if(s.done){
+    const sq=s.guesses.map((_,i)=>sqClass(s,i)); while(sq.length<5) sq.push("");
+    const next=slots().findIndex(x=>!x.done);
+    h+=`<div class="result"><span class="verdict ${s.done}">${s.done==="win"?`Got it in ${s.guesses.length} of 5`:"Out of clues"} · ${penalty(game)?`−${penalty(game)} rating`:"No rating lost"}</span>
+      <h2>${esc(s.answer)}</h2>
       <div class="score">${sq.map(c=>`<i class="sq ${c}"></i>`).join("")}</div>
-      ${next!==undefined?`<div class="share"><button class="btn" id="nextBtn" style="padding-block:10px">Next: Player ${next+1}</button><span class="eyebrow">${GAMES_PER_DAY-doneCount()} left today</span></div>`:dayRecap()}
+      ${next>=0?`<div class="share"><button class="btn" id="nextBtn" style="padding-block:10px">Next: Player ${next+1}</button><span class="eyebrow">${GAMES_PER_DAY-doneCount()} left today</span></div>`:dayRecap()}
       </div>`;
   }else{
     h+=`<div class="play">
       <div class="field"><input id="guessInput" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Type a player's name" aria-label="Guess a player" aria-autocomplete="list" aria-controls="menu"><button class="btn" id="guessBtn">Guess</button>
       <ul class="menu" id="menu" role="listbox" hidden></ul></div>
-      <div class="err" id="err"></div>
-      <div class="row"><span>Guess ${st.guesses.length+1} of 5</span>${revealed<5?`<button class="linkbtn" id="skipBtn">Skip to next clue</button>`:""}</div>
+      <div class="err" id="err" role="alert"></div>
+      <div class="row"><span>Guess ${s.guesses.length+1} of 5</span>${revealed<5?`<button class="linkbtn" id="skipBtn">Skip to next clue</button>`:""}</div>
     </div>`;
   }
-  document.getElementById("card").innerHTML=h;
+  card.innerHTML=h;
   lastRevealed=revealed;
-  if(st.done) wireDone(); else wirePlay(answer,st);
+  if(s.done) wireDone(); else wirePlay(s);
 }
 
-function wirePlay(answer,st){
-  const input=document.getElementById("guessInput"),menu=document.getElementById("menu"),err=document.getElementById("err");
+function dayRecap(){
+  const wins=slots().filter(s=>s.done==="win").length, r=DAYSTATE.result;
+  let note;
+  if(!isToday()) note=`<span class="note">Practice day: only today's game counts on the leaderboard.</span>`;
+  else if(!r) note=`<span class="note">Saving to the leaderboard…</span>`;
+  else if(r.bonus) note=`<span class="bonus">${r.streak}-day streak · +${r.bonus} bonus</span>`;
+  else note=r.streak?`<span class="note">Perfect-day streak: ${r.streak}. Reach 3 for a +100 daily bonus.</span>`:"";
+  return `<div class="recap"><span class="verdict ${wins===GAMES_PER_DAY?"win":""}">Day complete · ${wins} of ${GAMES_PER_DAY} correct</span>
+    <div class="rating"><span class="rating-num">${dayPoints()}</span><span class="eyebrow">Points<br>today</span></div>
+    ${note}
+    <ul class="recap-list">${slots().map((s,g)=>`<li><span class="eyebrow">P${g+1}</span><span class="score">${s.guesses.map((_,i)=>`<i class="sq ${sqClass(s,i)}"></i>`).join("")}</span><span class="recap-name">${esc(s.answer||"")}</span><span class="recap-pen">${penalty(g)?"−"+penalty(g):"0"}</span></li>`).join("")}</ul>
+    <button class="btn share-btn" id="shareBtn">Share results</button>
+    <span class="eyebrow" id="copyMsg" role="status"></span>
+    <textarea id="shareText" rows="8" readonly hidden aria-label="Results to copy"></textarea></div>`;
+}
+function shareText(){
+  const wins=slots().filter(s=>s.done==="win").length, r=DAYSTATE.result;
+  const date=parse(WEEK.days[dayIdx].day).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  const streak=r&&r.streak>=3?` · ${r.streak}-day streak`:"";
+  return `Ball Knowledge 🏀 No. ${puzzleNo()} · ${date}\n🏆 ${dayPoints()} points · ${wins}/${GAMES_PER_DAY} correct${streak}\n\n${slots().map(s=>s.guesses.map((_,i)=>sqEmoji[sqClass(s,i)]).join("")).join("\n")}`;
+}
+
+/* ---------- interaction ---------- */
+function wirePlay(s){
+  const input=$("guessInput"),menu=$("menu"),err=$("err");
   let opts=[],active=-1;
-  const guessed=n=>st.guesses.some(g=>g&&norm(g)===norm(n));
+  const guessed=n=>s.guesses.some(g=>g&&norm(g)===norm(n));
   function hl(n,q){const i=norm(n).indexOf(q);if(i<0)return esc(n);return esc(n.slice(0,i))+"<b>"+esc(n.slice(i,i+q.length))+"</b>"+esc(n.slice(i+q.length))}
   function show(){
     const q=norm(input.value);
@@ -362,7 +325,19 @@ function wirePlay(answer,st){
     if(!pick&&opts.length&&active>=0) pick=opts[active];
     if(!pick){err.textContent="Pick a player from the list.";return}
     if(guessed(pick)){err.textContent="You already guessed that player.";return}
-    record(pick,answer,st);
+    send(pick);
+  }
+  async function send(g){
+    if(busyGuess) return; busyGuess=true;
+    $("guessBtn").disabled=true; const sk=$("skipBtn"); if(sk) sk.disabled=true;
+    const {data,error}=await sb.rpc("make_guess",{p_day:WEEK.days[dayIdx].day,p_slot:game+1,p_guess:g});
+    busyGuess=false;
+    if(error){err.textContent=error.message||"Couldn't send that guess. Try again.";$("guessBtn").disabled=false;if(sk)sk.disabled=false;return}
+    DAYSTATE=data;
+    const cur=slots()[game];
+    if(cur.done&&doneCount()===GAMES_PER_DAY) refreshWeek();
+    render();
+    if(!cur.done&&g!==null){const i=$("guessInput");if(i)i.focus()}
   }
   input.addEventListener("input",()=>{err.textContent="";show()});
   input.addEventListener("keydown",e=>{
@@ -372,90 +347,38 @@ function wirePlay(answer,st){
     else if(e.key==="Escape"){menu.hidden=true}
   });
   input.addEventListener("blur",()=>setTimeout(()=>menu.hidden=true,120));
-  document.getElementById("guessBtn").onclick=submit;
-  const skip=document.getElementById("skipBtn"); if(skip) skip.onclick=()=>record(null,answer,st);
-}
-function record(g,answer,st){
-  st.guesses.push(g);
-  if(isHit(g,answer)) st.done="win"; else if(st.guesses.length>=5) st.done="loss";
-  saveState(dayIdx,game); render();
-  if(st.done&&doneCount()===GAMES_PER_DAY) submitDay(dayIdx);
-  if(!st.done&&g!==null){const i=document.getElementById("guessInput");if(i)i.focus()}
-}
-/* Rating: start at 1000 each day. Each wrong guess or skip costs (5 − level) × 20, so easier players cost more; missing a player entirely costs 5 × that. */
-const START_RATING=1000;
-function penalty(g){const st=getState(dayIdx,g);const misses=st.done==="win"?st.guesses.length-1:st.done==="loss"?5:st.guesses.length;return misses*(5-(g+1))*20}
-const dayRating=()=>START_RATING-[...Array(GAMES_PER_DAY).keys()].reduce((n,g)=>n+penalty(g),0);
-const SITE="https://claude.ai/artifact/CSLFB8r5dq6fzf6LijUXpn";
-const doneCount=()=>[...Array(GAMES_PER_DAY).keys()].filter(g=>getState(dayIdx,g).done).length;
-function dayRows(){
-  return week.days[dayIdx].map((p,g)=>{const st=getState(dayIdx,g);return{p,st,sq:st.guesses.map(x=>isHit(x,p[0])?"🟩":x===null?"⬜":"🟥").join("")}});
-}
-function dayRecap(){
-  const rows=dayRows(), wins=rows.filter(r=>r.st.done==="win").length;
-  return `<div class="recap"><span class="verdict ${wins===GAMES_PER_DAY?"win":""}">Day complete · ${wins} of ${GAMES_PER_DAY} correct</span>
-    <div class="rating"><span class="rating-num">${dayPoints()}</span><span class="eyebrow">Points<br>today</span></div>
-    ${serverNote()}
-    <ul class="recap-list">${rows.map((r,g)=>`<li><span class="eyebrow">P${g+1}</span><span class="score">${r.st.guesses.map(x=>`<i class="sq ${isHit(x,r.p[0])?"h":x===null?"s":"m"}"></i>`).join("")}</span><span class="recap-name">${esc(r.p[0])}</span><span class="recap-pen">${penalty(g)?"−"+penalty(g):"0"}</span></li>`).join("")}</ul>
-    <button class="btn share-btn" id="shareBtn">Share results</button>
-    <span class="eyebrow" id="copyMsg" role="status"></span>
-    <textarea id="shareText" rows="8" readonly hidden aria-label="Results to copy"></textarea></div>`;
-}
-function shareText(){
-  const rows=dayRows(), wins=rows.filter(r=>r.st.done==="win").length;
-  const total=rows.reduce((n,r)=>n+(r.st.done==="win"?r.st.guesses.length:0),0);
-  const d=wStart.getTime()+dayIdx*DAY;
-  const date=new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric"});
-  return `Ball Knowledge 🏀 No. ${puzzleNo()} · ${date}\n🏆 ${dayPoints()} points · ${wins}/${GAMES_PER_DAY} correct${streakLine()}\n\n${rows.map(r=>r.sq).join("\n")}`;
+  $("guessBtn").onclick=submit;
+  const skip=$("skipBtn"); if(skip) skip.onclick=()=>send(null);
 }
 function wireDone(){
-  const nb=document.getElementById("nextBtn");
-  if(nb) nb.onclick=()=>{game=firstOpenGame(dayIdx);lastRevealed=0;render()};
-  const btn=document.getElementById("shareBtn"); if(!btn||btn.disabled) return;
-  const msg=document.getElementById("copyMsg"),ta=document.getElementById("shareText");
+  const nb=$("nextBtn"); if(nb) nb.onclick=()=>{game=firstOpen();lastRevealed=0;render()};
+  const btn=$("shareBtn"); if(!btn) return;
   btn.onclick=()=>{
-    const text=shareText();
+    const text=shareText(), msg=$("copyMsg"), ta=$("shareText");
     const ok=()=>{btn.textContent="Copied";msg.textContent="Paste it into iMessage";setTimeout(()=>{btn.textContent="Share results"},2500)};
     const fallback=()=>{ta.value=text;ta.hidden=false;ta.focus();ta.setSelectionRange(0,text.length);msg.textContent="Tap Copy on the selected text, then paste it into iMessage"};
     try{navigator.clipboard.writeText(text).then(ok,fallback)}catch(e){fallback()}
   };
 }
-/* ---------- Supabase ---------- */
-const SB_URL="https://xaqqdsfevapmpeyfjbcs.supabase.co";
-const SB_KEY="sb_publishable_r360BkNeDoKP-gZh3NlnJQ_uiDiDT2I";
-const sb=window.supabase.createClient(SB_URL,SB_KEY);
-const EMAIL_DOMAIN="players.ballknowledge.app";
-const SERVER={}; /* day key -> {points, base_points, bonus, streak, correct} */
-const dayKey=i=>keyOf(new Date(wStart.getTime()+i*DAY));
-const dayPoints=()=>{const r=SERVER[dayKey(dayIdx)];return r?r.points:dayRating()};
-function serverNote(){
-  const k=dayKey(dayIdx), r=SERVER[k];
-  if(k!==todayKey()) return `<span class="note">Practice day: only today's game counts on the leaderboard.</span>`;
-  if(!r) return `<span class="note" id="saveNote">Saving to the leaderboard…</span>`;
-  return r.bonus?`<span class="bonus">${r.streak}-day streak · +${r.bonus} bonus</span>`:(r.streak?`<span class="note">Perfect-day streak: ${r.streak}. Reach 3 for a +100 daily bonus.</span>`:"");
-}
-function streakLine(){const r=SERVER[dayKey(dayIdx)];return r&&r.streak>=3?` · ${r.streak}-day streak`:""}
-function todayKey(){return keyOf(today)}
 
-async function submitDay(i){
-  const k=dayKey(i); if(k!==todayKey()||SERVER[k]) return;
-  const wins=week.days[i].filter((p,g)=>getState(i,g).done==="win").length;
-  const {error}=await sb.from("results").insert({day:k,base_points:dayRating(),correct:wins});
-  if(error&&error.code!=="23505"){const n=document.getElementById("saveNote");if(n)n.textContent="Couldn't save to the leaderboard. Check your connection and reopen the page.";return}
-  await loadMine(); render();
+/* ---------- data loading ---------- */
+async function refreshWeek(){
+  const {data}=await sb.rpc("week_status"); if(data){WEEK=data; renderDays();}
 }
-async function loadMine(){
-  const {data}=await sb.from("results").select("day,points,base_points,bonus,streak,correct").eq("user_id",ME.id).gte("day",week.start);
-  (data||[]).forEach(r=>SERVER[r.day]=r);
+async function openDay(i){
+  dayIdx=i; DAYSTATE=null; lastRevealed=0; shown={day:null,val:null}; render();
+  const {data,error}=await sb.rpc("get_day",{p_day:WEEK.days[i].day});
+  if(error){$("card").innerHTML=`<p class="note">Couldn't load this day. Check your connection and reload.</p>`;return}
+  if(dayIdx!==i) return;
+  DAYSTATE=data; game=firstOpen(); render();
 }
-async function retryPending(){
-  /* a finished today that never reached the server (closed tab, offline) */
-  const i=week.days.findIndex((_,d)=>dayKey(d)===todayKey());
-  if(i>=0&&!SERVER[todayKey()]&&[...Array(GAMES_PER_DAY).keys()].every(g=>getState(i,g).done)){const keep=dayIdx;dayIdx=i;await submitDay(i);dayIdx=keep}
+async function loadNames(){
+  const {data}=await sb.from("player_names").select("name").order("name").limit(5000);
+  NAMES=(data||[]).map(r=>r.name);
 }
 
 async function loadBoard(){
-  const body=document.getElementById("boardBody");
+  const body=$("boardBody");
   const {data,error}=await sb.from("leaderboard").select("id,username,total_points,rating,streak,days_played").order("total_points",{ascending:false}).limit(200);
   if(error){body.innerHTML=`<tr><td></td><td>Couldn't load the leaderboard.</td><td></td><td></td><td></td></tr>`;return}
   const rows=(data||[]).filter(r=>r.days_played>0);
@@ -463,56 +386,60 @@ async function loadBoard(){
   body.innerHTML="";
   rows.forEach((r,i)=>{
     const tr=document.createElement("tr"); if(r.id===ME.id) tr.className="me";
-    const c=[i+1,r.username,r.streak,Number(r.rating).toFixed(1),r.total_points.toLocaleString()];
-    c.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
+    [i+1,r.username,r.streak,Number(r.rating).toFixed(1),r.total_points.toLocaleString()].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
     body.appendChild(tr);
   });
 }
 
+/* ---------- views & auth ---------- */
 function show(view){
-  document.getElementById("authView").hidden=view!=="auth";
-  document.getElementById("nav").hidden=view==="auth";
-  document.getElementById("gameView").hidden=view!=="play";
-  document.getElementById("boardView").hidden=view!=="board";
+  $("authView").hidden=view!=="auth";
+  $("nav").hidden=view==="auth";
+  $("gameView").hidden=view!=="play";
+  $("boardView").hidden=view!=="board";
   document.querySelector(".live").style.visibility=view==="play"?"visible":"hidden";
-  document.getElementById("navPlay").setAttribute("aria-pressed",view==="play");
-  document.getElementById("navBoard").setAttribute("aria-pressed",view==="board");
+  $("navPlay").setAttribute("aria-pressed",view==="play");
+  $("navBoard").setAttribute("aria-pressed",view==="board");
   if(view==="board") loadBoard();
 }
-document.getElementById("navPlay").onclick=()=>{show("play");render()};
-document.getElementById("navBoard").onclick=()=>show("board");
-document.getElementById("signOut").onclick=async()=>{await sb.auth.signOut()};
+$("navPlay").onclick=()=>{show("play");render()};
+$("navBoard").onclick=()=>show("board");
+$("signOut").onclick=async()=>{await sb.auth.signOut()};
 
-const authErr=document.getElementById("authErr");
+const authErr=$("authErr");
 function creds(){
-  const u=document.getElementById("authUser").value.trim(), p=document.getElementById("authPass").value;
+  const u=$("authUser").value.trim(), p=$("authPass").value;
   if(!/^[A-Za-z0-9_]{3,16}$/.test(u)){authErr.textContent="Usernames are 3–16 letters, numbers or underscores.";return null}
   if(p.length<6){authErr.textContent="Passwords need at least 6 characters.";return null}
   return {u,p,email:`${u.toLowerCase()}@${EMAIL_DOMAIN}`};
 }
-function busy(on){document.getElementById("signInBtn").disabled=on;document.getElementById("signUpBtn").disabled=on}
-document.getElementById("authForm").addEventListener("submit",async e=>{
+function busy(on){$("signInBtn").disabled=on;$("signUpBtn").disabled=on}
+$("authForm").addEventListener("submit",async e=>{
   e.preventDefault(); authErr.textContent=""; const c=creds(); if(!c) return; busy(true);
   const {error}=await sb.auth.signInWithPassword({email:c.email,password:c.p}); busy(false);
   if(error) authErr.textContent=/invalid/i.test(error.message)?"Wrong username or password.":error.message;
 });
-document.getElementById("signUpBtn").onclick=async()=>{
+$("signUpBtn").onclick=async()=>{
   authErr.textContent=""; const c=creds(); if(!c) return; busy(true);
   const {data,error}=await sb.auth.signUp({email:c.email,password:c.p,options:{data:{username:c.u}}}); busy(false);
-  if(error){authErr.textContent=/registered|exists/i.test(error.message)?"That username is taken.":error.message;return}
+  if(error){authErr.textContent=/registered|exists|database/i.test(error.message)?"That username is taken.":error.message;return}
   if(!data.session) authErr.textContent="Account created, but sign-in isn't open yet. Try Sign in in a minute.";
 };
 
 async function enter(session){
-  if(!session){ME=null;show("auth");return}
+  if(!session){ME=null;WEEK=null;DAYSTATE=null;show("auth");return}
   if(ME&&ME.id===session.user.id) return;
-  const {data}=await sb.from("profiles").select("username").eq("id",session.user.id).maybeSingle();
-  ME={id:session.user.id,username:(data&&data.username)||session.user.email.split("@")[0]};
-  for(const k in mem) delete mem[k]; for(const k in SERVER) delete SERVER[k];
-  document.getElementById("whoName").textContent="@"+ME.username;
-  dayIdx=todayIdx; game=firstOpenGame(dayIdx); lastRevealed=0; shown={day:null,val:null};
-  await loadMine(); await retryPending();
-  show("play"); render();
+  ME={id:session.user.id};
+  show("play"); $("card").innerHTML=`<p class="note">Loading…</p>`;
+  const [{data:prof},{data:wk}]=await Promise.all([
+    sb.from("profiles").select("username").eq("id",session.user.id).maybeSingle(),
+    sb.rpc("week_status"), loadNames()]);
+  ME.username=(prof&&prof.username)||session.user.email.split("@")[0];
+  $("whoName").textContent="@"+ME.username;
+  WEEK=wk;
+  $("todayLabel").textContent=parse(WEEK.today).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  const ti=WEEK.days.findIndex(d=>d.day===WEEK.today);
+  await openDay(ti<0?0:ti);
 }
 sb.auth.onAuthStateChange((_evt,session)=>{setTimeout(()=>enter(session),0)});
 </script>
