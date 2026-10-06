@@ -127,7 +127,7 @@ ol.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .board-table td{padding:10px 4px;border-bottom:1px solid var(--line);text-align:right}
 .board-table td:nth-child(1){font-family:var(--display);font-weight:800;font-size:1.2rem;color:var(--muted);width:2em;text-align:left}
 .board-table td:nth-child(2){text-align:left;font-weight:600;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.board-table td:nth-child(4){font-family:var(--display);font-weight:800;font-size:1.15rem}
+.board-table td:nth-child(5){font-family:var(--display);font-weight:800;font-size:1.15rem}
 .board-table tr.me td{color:var(--accent)}
 .flame{font-weight:500;color:var(--muted);font-size:.85rem;margin-left:4px}
 .note{font-size:.85rem;color:var(--muted)}
@@ -161,8 +161,8 @@ ol.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
   </section>
   <section class="card board" id="boardView" hidden>
     <h2>Leaderboard</h2>
-    <p class="note">Ranked by total points. Rating is your average day out of 10. 🔥 means a streak of 3+ perfect days, worth +100 a day.</p>
-    <div style="overflow-x:auto"><table class="board-table"><thead><tr><th>#</th><th>Player</th><th>Rating</th><th>Points</th></tr></thead><tbody id="boardBody"><tr><td></td><td>Loading…</td><td></td><td></td></tr></tbody></table></div>
+    <p class="note">Ranked by total points. Rating is your average day out of 10. Streak counts days in a row with all 4 correct; a streak of 3 or higher earns a +100 bonus each day.</p>
+    <div style="overflow-x:auto"><table class="board-table"><thead><tr><th>#</th><th>Player</th><th>Streak</th><th>Rating</th><th>Points</th></tr></thead><tbody id="boardBody"><tr><td></td><td>Loading…</td><td></td><td></td><td></td></tr></tbody></table></div>
   </section>
   <div id="gameView" hidden>
   <div class="tabs" role="tablist" id="tabs" aria-label="Today's players"></div>
@@ -297,7 +297,7 @@ function render(){
   renderTabs();renderDays();renderRating();
   const srv=SERVER[dayKey(dayIdx)];
   if(srv&&doneCount()<GAMES_PER_DAY){
-    document.getElementById("card").innerHTML=`<div class="result" style="border:none;padding:0"><span class="verdict">Already played</span><h2>${srv.points} points</h2><p class="note">You finished this day on another device: ${srv.correct} of 4 correct${srv.streak>=3?` · 🔥 ${srv.streak}-day streak`:""}.</p></div>`;
+    document.getElementById("card").innerHTML=`<div class="result" style="border:none;padding:0"><span class="verdict">Already played</span><h2>${srv.points} points</h2><p class="note">You finished this day on another device: ${srv.correct} of 4 correct${srv.streak>=3?` · ${srv.streak}-day streak`:""}.</p></div>`;
     return;
   }
   const [answer,level,...clues]=week.days[dayIdx][game];
@@ -432,9 +432,9 @@ function serverNote(){
   const k=dayKey(dayIdx), r=SERVER[k];
   if(k!==todayKey()) return `<span class="note">Practice day: only today's game counts on the leaderboard.</span>`;
   if(!r) return `<span class="note" id="saveNote">Saving to the leaderboard…</span>`;
-  return r.bonus?`<span class="bonus">🔥 ${r.streak}-day streak · +${r.bonus} bonus</span>`:(r.streak?`<span class="note">Perfect-day streak: ${r.streak}. Reach 3 for a +100 daily bonus.</span>`:"");
+  return r.bonus?`<span class="bonus">${r.streak}-day streak · +${r.bonus} bonus</span>`:(r.streak?`<span class="note">Perfect-day streak: ${r.streak}. Reach 3 for a +100 daily bonus.</span>`:"");
 }
-function streakLine(){const r=SERVER[dayKey(dayIdx)];return r&&r.streak>=3?` · 🔥${r.streak}`:""}
+function streakLine(){const r=SERVER[dayKey(dayIdx)];return r&&r.streak>=3?` · ${r.streak}-day streak`:""}
 function todayKey(){return keyOf(today)}
 
 async function submitDay(i){
@@ -457,16 +457,14 @@ async function retryPending(){
 async function loadBoard(){
   const body=document.getElementById("boardBody");
   const {data,error}=await sb.from("leaderboard").select("id,username,total_points,rating,streak,days_played").order("total_points",{ascending:false}).limit(200);
-  if(error){body.innerHTML=`<tr><td></td><td>Couldn't load the leaderboard.</td><td></td><td></td></tr>`;return}
+  if(error){body.innerHTML=`<tr><td></td><td>Couldn't load the leaderboard.</td><td></td><td></td><td></td></tr>`;return}
   const rows=(data||[]).filter(r=>r.days_played>0);
-  if(!rows.length){body.innerHTML=`<tr><td></td><td style="white-space:normal">No scores yet. Finish today's four players to get on the board.</td><td></td><td></td></tr>`;return}
+  if(!rows.length){body.innerHTML=`<tr><td></td><td style="white-space:normal">No scores yet. Finish today's four players to get on the board.</td><td></td><td></td><td></td></tr>`;return}
   body.innerHTML="";
   rows.forEach((r,i)=>{
     const tr=document.createElement("tr"); if(r.id===ME.id) tr.className="me";
-    const c=[i+1,"",Number(r.rating).toFixed(1),r.total_points.toLocaleString()];
-    c.forEach((v,j)=>{const td=document.createElement("td");
-      if(j===1){td.textContent=r.username;if(r.streak>=3){const f=document.createElement("span");f.className="flame";f.textContent="🔥"+r.streak;td.appendChild(f)}}
-      else td.textContent=v; tr.appendChild(td)});
+    const c=[i+1,r.username,r.streak,Number(r.rating).toFixed(1),r.total_points.toLocaleString()];
+    c.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td)});
     body.appendChild(tr);
   });
 }
