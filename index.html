@@ -144,6 +144,10 @@ ol.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .cmp-labels span{position:absolute;transform:translateX(-50%)}
 .cmp-key{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
 .cmp-key b{color:var(--ink);font-weight:600}
+/* Special background for a few named players */
+.bg-art{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(color-mix(in srgb,var(--bg) 45%,transparent),color-mix(in srgb,var(--bg) 45%,transparent)),var(--bg-art) center/cover no-repeat,var(--bg)}
+body.has-bg-art{background:transparent}
 .howto{font-size:.85rem;color:var(--muted);text-align:center;text-wrap:balance}
 @media (prefers-reduced-motion:reduce){.clue.fresh .text,.live-num.hit{animation:none}.live-delta.show{animation:none;opacity:1}}
 </style>
@@ -459,7 +463,7 @@ $("signUpBtn").onclick=async()=>{
 };
 
 async function enter(session){
-  if(!session){ME=null;WEEK=null;DAYSTATE=null;show("auth");return}
+  if(!session){ME=null;WEEK=null;DAYSTATE=null;applyBackground();show("auth");return}
   if(ME&&ME.id===session.user.id) return;
   ME={id:session.user.id};
   show("play"); $("card").innerHTML=`<p class="note">Loading…</p>`;
@@ -468,10 +472,21 @@ async function enter(session){
     sb.rpc("week_status"), loadNames()]);
   ME.username=(prof&&prof.username)||session.user.email.split("@")[0];
   $("whoName").textContent="@"+ME.username;
+  applyBackground();
   WEEK=wk;
   $("todayLabel").textContent=parse(WEEK.today).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
   const ti=WEEK.days.findIndex(d=>d.day===WEEK.today);
   await openDay(ti<0?0:ti);
+}
+/* Players who get the special background (case doesn't matter) */
+const BG_ART_URL="https://tr.rbxcdn.com/180DAY-07ed0d3680cca2d94057f7debefd62ad/420/420/BackAccessory/Png/noFilter";
+const BG_ART_PLAYERS=["grant","docstatham"];
+function applyBackground(){
+  let el=document.querySelector(".bg-art");
+  const on=!!(ME&&ME.username&&BG_ART_PLAYERS.includes(ME.username.toLowerCase()));
+  document.body.classList.toggle("has-bg-art",on);
+  if(on&&!el){el=document.createElement("div");el.className="bg-art";el.setAttribute("aria-hidden","true");el.style.setProperty("--bg-art",`url("${BG_ART_URL}")`);document.body.prepend(el)}
+  if(!on&&el) el.remove();
 }
 sb.auth.onAuthStateChange((_evt,session)=>{setTimeout(()=>enter(session),0)});
 </script>
