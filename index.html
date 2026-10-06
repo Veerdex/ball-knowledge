@@ -487,10 +487,10 @@ document.getElementById("signOut").onclick=async()=>{await sb.auth.signOut()};
 
 const authErr=document.getElementById("authErr");
 function creds(){
-  const u=document.getElementById("authUser").value.trim().toLowerCase(), p=document.getElementById("authPass").value;
-  if(!/^[a-z0-9_]{3,16}$/.test(u)){authErr.textContent="Usernames are 3–16 letters, numbers or underscores.";return null}
+  const u=document.getElementById("authUser").value.trim(), p=document.getElementById("authPass").value;
+  if(!/^[A-Za-z0-9_]{3,16}$/.test(u)){authErr.textContent="Usernames are 3–16 letters, numbers or underscores.";return null}
   if(p.length<6){authErr.textContent="Passwords need at least 6 characters.";return null}
-  return {u,p,email:`${u}@${EMAIL_DOMAIN}`};
+  return {u,p,email:`${u.toLowerCase()}@${EMAIL_DOMAIN}`};
 }
 function busy(on){document.getElementById("signInBtn").disabled=on;document.getElementById("signUpBtn").disabled=on}
 document.getElementById("authForm").addEventListener("submit",async e=>{
