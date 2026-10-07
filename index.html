@@ -144,7 +144,11 @@ ol.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .cmp-labels span{position:absolute;transform:translateX(-50%)}
 .cmp-key{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
 .cmp-key b{color:var(--ink);font-weight:600}
-/* Special background for a few named players */
+/* Football uses a red signature color; basketball keeps the blue */
+:root[data-sport="nfl"]{--accent:#B3123A;--grid:rgba(179,18,58,.07)}
+@media (prefers-color-scheme:dark){:root[data-sport="nfl"]:not([data-theme="light"]){--accent:#FF5C7A;--grid:rgba(255,92,122,.07)}}
+:root[data-theme="dark"][data-sport="nfl"]{--accent:#FF5C7A;--grid:rgba(255,92,122,.07)}
+/* Sport background photo, dimmed so text stays readable */
 .bg-art{position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:linear-gradient(color-mix(in srgb,var(--bg) 45%,transparent),color-mix(in srgb,var(--bg) 45%,transparent)),var(--bg-art) center/cover no-repeat,var(--bg)}
 body.has-bg-art{background:transparent}
@@ -489,17 +493,21 @@ async function enter(session){
   const ti=WEEK.days.findIndex(d=>d.day===WEEK.today);
   await openDay(ti<0?0:ti);
 }
-/* Players who get the special background (case doesn't matter) */
-const BG_ART_URL="https://tr.rbxcdn.com/180DAY-07ed0d3680cca2d94057f7debefd62ad/420/420/BackAccessory/Png/noFilter";
-const BG_ART_PLAYERS=["grant","docstatham"];
+/* Background photo and signature color follow the selected sport */
+const SPORT_BG={
+  nba:"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ_6wLZdjkTxoH2YxJDdwHxdd3m4BQBB5ItlOax1jU3ODCC2qbzqjT3kws&s=10",
+  nfl:"https://i.insider.com/5de55898fd9db252543bee16?width=700"
+};
 function applyBackground(){
+  document.documentElement.dataset.sport=SPORT;
   let el=document.querySelector(".bg-art");
-  const on=!!(ME&&ME.username&&BG_ART_PLAYERS.includes(ME.username.toLowerCase()));
-  document.body.classList.toggle("has-bg-art",on);
-  if(on&&!el){el=document.createElement("div");el.className="bg-art";el.setAttribute("aria-hidden","true");el.style.setProperty("--bg-art",`url("${BG_ART_URL}")`);document.body.prepend(el)}
-  if(!on&&el) el.remove();
+  if(!el){el=document.createElement("div");el.className="bg-art";el.setAttribute("aria-hidden","true");document.body.prepend(el)}
+  el.style.setProperty("--bg-art",`url("${SPORT_BG[SPORT]}")`);
+  document.body.classList.add("has-bg-art");
+  const meta=document.querySelector('meta[name="theme-color"]'); if(meta) meta.content=getComputedStyle(document.body).getPropertyValue("--bg").trim()||meta.content;
 }
-function markSport(){document.querySelectorAll("#sportSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sport===SPORT))}
+applyBackground();
+function markSport(){document.querySelectorAll("#sportSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sport===SPORT));applyBackground()}
 async function switchSport(sp){
   if(sp===SPORT||!SPORTS[sp]) return;
   SPORT=sp; BOARD_SPORT=sp; ls.set("bk:sport",sp); NAMES=NAMES_BY[sp]; markSport();
