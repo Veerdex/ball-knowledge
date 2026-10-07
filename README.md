@@ -3,9 +3,9 @@
 A daily NBA player guessing game. Four players a day, five clues each, five guesses each.
 
 - `index.html` — the whole game (static page, served by GitHub Pages)
-- Puzzles, the guess list, each player's guesses, results, streaks and the leaderboard all live in Supabase (project `ball-knowledge`).
-- The page never receives answers: clues are revealed and guesses are checked by database functions (`get_day`, `make_guess`, `week_status`).
-- New weeks are added to the `puzzles` and `player_names` tables every Sunday; this file doesn't change.
+- Two sports (basketball `nba`, football `nfl`), 4 players each per day. Puzzles, guess lists, guesses, results, streaks and per-sport leaderboards live in Supabase (project `ball-knowledge`, tables `bk_*`).
+- The page never receives answers: clues are revealed and guesses are checked by database functions (`bk_get_day`, `bk_make_guess`, `bk_week_status`).
+- New weeks are added to the `bk_puzzles` and `bk_names` tables for both sports every Sunday; this file doesn't change.
 
 ## Scoring
 - Each day starts at 1000 points.

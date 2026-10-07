@@ -148,6 +148,9 @@ ol.clues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;g
 .bg-art{position:fixed;inset:0;z-index:-1;pointer-events:none;
   background:linear-gradient(color-mix(in srgb,var(--bg) 45%,transparent),color-mix(in srgb,var(--bg) 45%,transparent)),var(--bg-art) center/cover no-repeat,var(--bg)}
 body.has-bg-art{background:transparent}
+.sport-row{display:flex}
+.sport-row .seg{width:100%;display:grid;grid-template-columns:1fr 1fr}
+.board-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .howto{font-size:.85rem;color:var(--muted);text-align:center;text-wrap:balance}
 @media (prefers-reduced-motion:reduce){.clue.fresh .text,.live-num.hit{animation:none}.live-delta.show{animation:none;opacity:1}}
 </style>
@@ -176,12 +179,13 @@ body.has-bg-art{background:transparent}
     </form>
   </section>
   <section class="card board" id="boardView" hidden>
-    <h2>Leaderboard</h2>
+    <div class="board-head"><h2>Leaderboard</h2><div class="seg" role="group" aria-label="Leaderboard sport" id="boardSport"><button data-sport="nba" aria-pressed="true">🏀</button><button data-sport="nfl" aria-pressed="false">🏈</button></div></div>
     <p class="note">Ranked by total points. Rating is your average day out of 10. Streak counts days in a row with all 4 correct; a streak of 3 or higher earns a +100 bonus each day.</p>
     <div style="overflow-x:auto"><table class="board-table"><thead><tr><th>#</th><th>Player</th><th>Streak</th><th>Rating</th><th>Points</th></tr></thead><tbody id="boardBody"><tr><td></td><td>Loading…</td><td></td><td></td><td></td></tr></tbody></table></div>
   </section>
   <div id="gameView" hidden>
-  <div class="tabs" role="tablist" id="tabs" aria-label="Today's players"></div>
+  <div class="sport-row"><div class="seg" role="group" aria-label="Sport" id="sportSeg"><button data-sport="nba" aria-pressed="true">🏀 Basketball</button><button data-sport="nfl" aria-pressed="false">🏈 Football</button></div></div>
+  <div class="tabs" role="tablist" id="tabs" aria-label="Today's players" style="margin-top:14px"></div>
   <div class="days" id="days" aria-label="Day of the week" style="margin-top:14px"></div>
   <section class="card" id="card" aria-live="polite" style="margin-top:14px"></section>
   </div>
@@ -202,6 +206,9 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 const norm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ").trim();
 const parse=k=>{const[y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)};
 
+const SPORTS={nba:{label:"Basketball",emoji:"🏀"},nfl:{label:"Football",emoji:"🏈"}};
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let SPORT=SPORTS[ls.get("bk:sport")]?ls.get("bk:sport"):"nba", BOARD_SPORT=SPORT, NAMES_BY={nba:[],nfl:[]};
 let ME=null, NAMES=[], WEEK=null, DAYSTATE=null, dayIdx=0, game=0, lastRevealed=0, busyGuess=false;
 let shown={day:null,val:null};
 
@@ -330,7 +337,7 @@ function shareText(){
   const wins=slots().filter(s=>s.done==="win").length, r=DAYSTATE.result;
   const date=parse(WEEK.days[dayIdx].day).toLocaleDateString("en-US",{month:"short",day:"numeric"});
   const streak=r&&r.streak>=3?` · ${r.streak}-day streak`:"";
-  return `Ball Knowledge 🏀 No. ${puzzleNo()} · ${date}\n🏆 ${dayPoints()} points · ${wins}/${GAMES_PER_DAY} correct${streak}\n\n${slots().map(s=>s.guesses.map((_,i)=>sqEmoji[sqClass(s,i)]).join("")).join("\n")}`;
+  return `Ball Knowledge ${SPORTS[SPORT].emoji} No. ${puzzleNo()} · ${date}\n🏆 ${dayPoints()} points · ${wins}/${GAMES_PER_DAY} correct${streak}\n\n${slots().map(s=>s.guesses.map((_,i)=>sqEmoji[sqClass(s,i)]).join("")).join("\n")}`;
 }
 
 /* ---------- interaction ---------- */
@@ -366,7 +373,7 @@ function wirePlay(s){
   async function send(g){
     if(busyGuess) return; busyGuess=true;
     $("guessBtn").disabled=true; const sk=$("skipBtn"); if(sk) sk.disabled=true;
-    const {data,error}=await sb.rpc("make_guess",{p_day:WEEK.days[dayIdx].day,p_slot:game+1,p_guess:g});
+    const {data,error}=await sb.rpc("bk_make_guess",{p_sport:SPORT,p_day:WEEK.days[dayIdx].day,p_slot:game+1,p_guess:g});
     busyGuess=false;
     if(error){err.textContent=error.message||"Couldn't send that guess. Try again.";$("guessBtn").disabled=false;if(sk)sk.disabled=false;return}
     DAYSTATE=data;
@@ -399,26 +406,30 @@ function wireDone(){
 
 /* ---------- data loading ---------- */
 async function refreshWeek(){
-  const {data}=await sb.rpc("week_status"); if(data){WEEK=data; renderDays();}
+  const sp=SPORT; const {data}=await sb.rpc("bk_week_status",{p_sport:sp}); if(data&&sp===SPORT){WEEK=data; renderDays();}
 }
 async function openDay(i){
   dayIdx=i; DAYSTATE=null; lastRevealed=0; shown={day:null,val:null}; render();
-  const {data,error}=await sb.rpc("get_day",{p_day:WEEK.days[i].day});
+  const sp=SPORT;
+  const {data,error}=await sb.rpc("bk_get_day",{p_sport:sp,p_day:WEEK.days[i].day});
+  if(sp!==SPORT||dayIdx!==i) return;
   if(error){$("card").innerHTML=`<p class="note">Couldn't load this day. Check your connection and reload.</p>`;return}
-  if(dayIdx!==i) return;
   DAYSTATE=data; game=firstOpen(); render();
 }
 async function loadNames(){
-  const {data}=await sb.from("player_names").select("name").order("name").limit(5000);
-  NAMES=(data||[]).map(r=>r.name);
+  const {data}=await sb.from("bk_names").select("sport,name").order("name").limit(10000);
+  NAMES_BY={nba:[],nfl:[]}; (data||[]).forEach(r=>{if(NAMES_BY[r.sport])NAMES_BY[r.sport].push(r.name)});
+  NAMES=NAMES_BY[SPORT];
 }
 
 async function loadBoard(){
   const body=$("boardBody");
-  const {data,error}=await sb.from("leaderboard").select("id,username,total_points,rating,streak,days_played").order("total_points",{ascending:false}).limit(200);
+  const sp=BOARD_SPORT; document.querySelectorAll("#boardSport button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sport===sp));
+  const {data,error}=await sb.from("bk_leaderboard").select("id,username,total_points,rating,streak,days_played").eq("sport",sp).order("total_points",{ascending:false}).limit(200);
+  if(sp!==BOARD_SPORT) return;
   if(error){body.innerHTML=`<tr><td></td><td>Couldn't load the leaderboard.</td><td></td><td></td><td></td></tr>`;return}
   const rows=(data||[]).filter(r=>r.days_played>0);
-  if(!rows.length){body.innerHTML=`<tr><td></td><td style="white-space:normal">No scores yet. Finish today's four players to get on the board.</td><td></td><td></td><td></td></tr>`;return}
+  if(!rows.length){body.innerHTML=`<tr><td></td><td style="white-space:normal">No scores yet. Finish today's four ${SPORTS[sp].label.toLowerCase()} players to get on the board.</td><td></td><td></td><td></td></tr>`;return}
   body.innerHTML="";
   rows.forEach((r,i)=>{
     const tr=document.createElement("tr"); if(r.id===ME.id) tr.className="me";
@@ -469,11 +480,11 @@ async function enter(session){
   show("play"); $("card").innerHTML=`<p class="note">Loading…</p>`;
   const [{data:prof},{data:wk}]=await Promise.all([
     sb.from("profiles").select("username").eq("id",session.user.id).maybeSingle(),
-    sb.rpc("week_status"), loadNames()]);
+    sb.rpc("bk_week_status",{p_sport:SPORT}), loadNames()]);
   ME.username=(prof&&prof.username)||session.user.email.split("@")[0];
   $("whoName").textContent="@"+ME.username;
   applyBackground();
-  WEEK=wk;
+  WEEK=wk; markSport();
   $("todayLabel").textContent=parse(WEEK.today).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
   const ti=WEEK.days.findIndex(d=>d.day===WEEK.today);
   await openDay(ti<0?0:ti);
@@ -488,6 +499,16 @@ function applyBackground(){
   if(on&&!el){el=document.createElement("div");el.className="bg-art";el.setAttribute("aria-hidden","true");el.style.setProperty("--bg-art",`url("${BG_ART_URL}")`);document.body.prepend(el)}
   if(!on&&el) el.remove();
 }
+function markSport(){document.querySelectorAll("#sportSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sport===SPORT))}
+async function switchSport(sp){
+  if(sp===SPORT||!SPORTS[sp]) return;
+  SPORT=sp; BOARD_SPORT=sp; ls.set("bk:sport",sp); NAMES=NAMES_BY[sp]; markSport();
+  WEEK=null; DAYSTATE=null; $("card").innerHTML=`<p class="note">Loading…</p>`;
+  const {data}=await sb.rpc("bk_week_status",{p_sport:sp}); if(sp!==SPORT||!data) return;
+  WEEK=data; const ti=WEEK.days.findIndex(d=>d.day===WEEK.today); await openDay(ti<0?0:ti);
+}
+document.querySelectorAll("#sportSeg button").forEach(b=>b.onclick=()=>switchSport(b.dataset.sport));
+document.querySelectorAll("#boardSport button").forEach(b=>b.onclick=()=>{BOARD_SPORT=b.dataset.sport;loadBoard()});
 sb.auth.onAuthStateChange((_evt,session)=>{setTimeout(()=>enter(session),0)});
 </script>
 </body>
